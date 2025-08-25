@@ -29,52 +29,59 @@ export default function SupabaseTest() {
   useEffect(() => {
     async function testConnection() {
       try {
-        // 測試基本連接
-        const { error: connectionError } = await supabase
-          .from('information_schema.tables')
-          .select('table_name')
-          .eq('table_schema', 'public')
-          .limit(1)
-        
-        if (connectionError) {
+        // 直接檢查資料表存在性 - 這樣也能測試連接
+        const tableChecks = await Promise.allSettled([
+          supabase.from('user_profiles').select('id').limit(1),
+          supabase.from('strategies').select('id').limit(1),
+          supabase.from('trades').select('id').limit(1),
+          supabase.from('performance_snapshots').select('id').limit(1)
+        ])
+
+        // 檢查是否有任何成功的連接
+        const hasAnyConnection = tableChecks.some(result => 
+          result.status === 'fulfilled' && 
+          (result.value.error === null || 
+           (result.value.error && !result.value.error.message.includes('JWT')))
+        )
+
+        if (!hasAnyConnection) {
+          // 所有查詢都失敗，可能是連接問題
+          const firstError = tableChecks[0].status === 'fulfilled' 
+            ? tableChecks[0].value.error?.message 
+            : tableChecks[0].reason?.message
+          
           setStatus(prev => ({
             ...prev,
             connection: 'failed',
-            error: connectionError.message
+            error: firstError || '無法連接到 Supabase'
           }))
           return
         }
 
-        // 檢查資料表是否存在
-        const { data: tableList, error: tableError } = await supabase
-          .from('information_schema.tables')
-          .select('table_name')
-          .eq('table_schema', 'public')
-          .in('table_name', ['user_profiles', 'strategies', 'trades', 'performance_snapshots'])
-        
-        if (tableError) {
-          setStatus(prev => ({
-            ...prev,
-            connection: 'connected',
-            error: `資料表檢查失敗: ${tableError.message}`
-          }))
-          return
+        // 連接成功，檢查各表狀態
+        const tableExists = {
+          user_profiles: tableChecks[0].status === 'fulfilled' && 
+            (tableChecks[0].value.error === null || 
+             !tableChecks[0].value.error.message.includes('does not exist')),
+          strategies: tableChecks[1].status === 'fulfilled' && 
+            (tableChecks[1].value.error === null || 
+             !tableChecks[1].value.error.message.includes('does not exist')),
+          trades: tableChecks[2].status === 'fulfilled' && 
+            (tableChecks[2].value.error === null || 
+             !tableChecks[2].value.error.message.includes('does not exist')),
+          performance_snapshots: tableChecks[3].status === 'fulfilled' && 
+            (tableChecks[3].value.error === null || 
+             !tableChecks[3].value.error.message.includes('does not exist'))
         }
-
-        const existingTables = tableList?.map(t => t.table_name) || []
         
         setStatus({
           connection: 'connected',
-          tables: {
-            user_profiles: existingTables.includes('user_profiles'),
-            strategies: existingTables.includes('strategies'),
-            trades: existingTables.includes('trades'),
-            performance_snapshots: existingTables.includes('performance_snapshots')
-          },
+          tables: tableExists,
           error: null
         })
         
       } catch (err) {
+        console.error('Supabase 連接測試錯誤:', err)
         setStatus(prev => ({
           ...prev,
           connection: 'failed',
