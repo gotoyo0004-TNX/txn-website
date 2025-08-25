@@ -1,9 +1,7 @@
 'use client'
 
 import React, { useState } from 'react'
-import LoginForm from '@/components/auth/LoginForm'
-import RegisterForm from '@/components/auth/RegisterForm'
-import ForgotPasswordForm from '@/components/auth/ForgotPasswordForm'
+import { LoginForm, RegisterForm, ForgotPasswordForm } from '@/components/auth'
 
 type AuthMode = 'login' | 'register' | 'forgot-password'
 

@@ -1,0 +1,24 @@
+{
+  "css.validate": false,
+  "less.validate": false,
+  "scss.validate": false,
+  "tailwindCSS.includeLanguages": {
+    "typescript": "javascript",
+    "typescriptreact": "javascript"
+  },
+  "tailwindCSS.experimental.classRegex": [
+    "class(?:Name)?\\s*[:=]\\s*['\"]([^'\"]*)['\"]" 
+  ],
+  "editor.quickSuggestions": {
+    "strings": true
+  },
+  "files.associations": {
+    "*.css": "tailwindcss"
+  },
+  "emmet.includeLanguages": {
+    "javascript": "javascriptreact",
+    "typescript": "typescriptreact"
+  },
+  "tailwindCSS.validate": false,
+  "css.lint.unknownAtRules": "ignore"
+}
