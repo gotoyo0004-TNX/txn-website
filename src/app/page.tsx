@@ -1,27 +1,13 @@
 import Image from "next/image";
 import SupabaseTest from "@/components/SupabaseTest";
+import Navigation from "@/components/layout/Navigation";
 import { Button, Card, CardHeader, CardTitle, CardContent, Badge } from "@/components/ui";
 
 export default function Home() {
   return (
     <div className="font-sans min-h-screen bg-gradient-to-br from-txn-primary-50 to-txn-accent-50 dark:from-txn-primary-900 dark:to-txn-primary-800">
-      {/* Header */}
-      <header className="container mx-auto px-8 py-6">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-gradient-accent rounded-xl flex items-center justify-center shadow-txn-lg">
-              <span className="text-txn-primary font-bold text-xl">T</span>
-            </div>
-            <div>
-              <h1 className="text-3xl font-bold text-gradient-primary">TXN</h1>
-              <p className="text-sm text-txn-primary-600 dark:text-gray-400">交易日誌系統</p>
-            </div>
-          </div>
-          <Badge variant="warning" size="sm">
-            v1.0 MVP 開發中
-          </Badge>
-        </div>
-      </header>
+      {/* Navigation */}
+      <Navigation />
 
       {/* Main Content */}
       <main className="container mx-auto px-8 py-12">
