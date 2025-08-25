@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
 import { Button, Input, Card, CardHeader, CardTitle, CardContent } from '@/components/ui'
 import { EyeIcon, EyeSlashIcon, EnvelopeIcon, LockClosedIcon } from '@heroicons/react/24/outline'
@@ -12,6 +13,7 @@ interface LoginFormProps {
 
 const LoginForm: React.FC<LoginFormProps> = ({ onToggleMode, onForgotPassword }) => {
   const { signIn } = useAuth()
+  const router = useRouter()
   const [formData, setFormData] = useState({
     email: '',
     password: ''
@@ -19,6 +21,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onToggleMode, onForgotPassword })
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [success, setSuccess] = useState('')
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData(prev => ({
@@ -31,12 +34,21 @@ const LoginForm: React.FC<LoginFormProps> = ({ onToggleMode, onForgotPassword })
     e.preventDefault()
     setLoading(true)
     setError('')
+    setSuccess('')
 
     try {
       const { error } = await signIn(formData.email, formData.password)
       
       if (error) {
         setError(getErrorMessage(error.message))
+      } else {
+        // 登入成功
+        setSuccess('登入成功！正在重定向...')
+        
+        // 短暫延遲後重定向到主頁
+        setTimeout(() => {
+          router.push('/')
+        }, 1000)
       }
     } catch (error) {
       console.error('登入錯誤:', error)
@@ -109,6 +121,12 @@ const LoginForm: React.FC<LoginFormProps> = ({ onToggleMode, onForgotPassword })
           {error && (
             <div className="bg-txn-loss-50 border border-txn-loss-200 text-txn-loss-800 px-4 py-3 rounded-lg text-sm">
               {error}
+            </div>
+          )}
+
+          {success && (
+            <div className="bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded-lg text-sm">
+              {success}
             </div>
           )}
 

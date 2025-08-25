@@ -152,9 +152,26 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   // 登出
   const signOut = async () => {
-    const { error } = await supabase.auth.signOut()
-    if (error) {
-      console.error('Error signing out:', error)
+    try {
+      const { error } = await supabase.auth.signOut()
+      if (error) {
+        console.error('Error signing out:', error)
+        throw error
+      }
+      
+      // 登出成功後，清理本地狀態
+      setUser(null)
+      setSession(null)
+      
+      // 重定向到登入頁面
+      if (typeof window !== 'undefined') {
+        window.location.href = '/auth'
+      }
+    } catch (error) {
+      console.error('登出失敗:', error)
+      // 即使登出失敗，也嘗試清理本地狀態
+      setUser(null)
+      setSession(null)
     }
   }
 

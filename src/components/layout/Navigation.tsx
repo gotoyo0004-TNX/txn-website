@@ -1,6 +1,6 @@
 'use client'
 
-import React from 'react'
+import React, { useState } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { Button, Badge } from '@/components/ui'
 import { UserIcon, ArrowRightOnRectangleIcon } from '@heroicons/react/24/outline'
@@ -8,6 +8,18 @@ import Link from 'next/link'
 
 const Navigation: React.FC = () => {
   const { user, signOut, loading } = useAuth()
+  const [loggingOut, setLoggingOut] = useState(false)
+
+  const handleSignOut = async () => {
+    setLoggingOut(true)
+    try {
+      await signOut()
+    } catch (error) {
+      console.error('登出錯誤:', error)
+    } finally {
+      setLoggingOut(false)
+    }
+  }
 
   if (loading) {
     return (
@@ -55,10 +67,12 @@ const Navigation: React.FC = () => {
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={signOut}
+                  onClick={handleSignOut}
+                  loading={loggingOut}
+                  disabled={loggingOut}
                   icon={<ArrowRightOnRectangleIcon className="h-4 w-4" />}
                 >
-                  登出
+                  {loggingOut ? '登出中...' : '登出'}
                 </Button>
               </>
             ) : (
