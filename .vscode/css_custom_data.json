@@ -1,0 +1,30 @@
+{
+  "version": 1.1,
+  "atDirectives": [
+    {
+      "name": "@theme",
+      "description": "Tailwind CSS v4 theme configuration",
+      "browsers": ["E18", "FF29", "S9", "C28", "IE11"]
+    },
+    {
+      "name": "@import",
+      "description": "Import Tailwind CSS",
+      "browsers": ["E18", "FF29", "S9", "C28", "IE11"]
+    },
+    {
+      "name": "@layer",
+      "description": "Tailwind CSS layer directive",
+      "browsers": ["E18", "FF29", "S9", "C28", "IE11"]
+    },
+    {
+      "name": "@apply",
+      "description": "Apply Tailwind CSS utilities",
+      "browsers": ["E18", "FF29", "S9", "C28", "IE11"]
+    },
+    {
+      "name": "@config",
+      "description": "Tailwind CSS config directive",
+      "browsers": ["E18", "FF29", "S9", "C28", "IE11"]
+    }
+  ]
+}

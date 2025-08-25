@@ -14,6 +14,8 @@
    Tailwind CSS v4 主題配置
    ============================================= */
 
+/* Tailwind CSS v4 主題配置 - VS Code CSS 檢查器可能不認識 @theme 語法 */
+/* stylelint-disable-next-line at-rule-no-unknown */
 @theme {
   /* TXN 品牌色彩系統 */
   --color-txn-primary-50: #F7FAFC;
