@@ -13,3 +13,9 @@ export type { BadgeProps } from './Badge'
 
 export { Loading } from './Loading'
 export type { LoadingProps } from './Loading'
+
+// 通知系統
+export { NotificationProvider, useNotification } from './NotificationProvider'
+
+// 確認對話框
+export { ConfirmationProvider, useConfirmation } from './ConfirmationProvider'

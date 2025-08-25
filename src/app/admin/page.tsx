@@ -3,13 +3,26 @@
 import React, { useState, useEffect } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { supabase } from '@/lib/supabase'
-import { Card, CardHeader, CardTitle, CardContent, Button } from '@/components/ui'
+import { 
+  Card, 
+  CardHeader, 
+  CardTitle, 
+  CardContent, 
+  Button, 
+  NotificationProvider,
+  ConfirmationProvider,
+  useNotification,
+  useConfirmation
+} from '@/components/ui'
 import { 
   UserGroupIcon, 
   CheckCircleIcon, 
   XCircleIcon, 
   ClockIcon,
-  ExclamationTriangleIcon 
+  ExclamationTriangleIcon,
+  DocumentTextIcon,
+  RefreshIcon,
+  EyeIcon
 } from '@heroicons/react/24/outline'
 
 interface PendingUser {
@@ -19,6 +32,9 @@ interface PendingUser {
   trading_experience: string
   initial_capital: number
   created_at: string
+  role: string
+  currency: string
+  timezone: string
 }
 
 interface UserStats {
@@ -28,13 +44,31 @@ interface UserStats {
   inactive: number
 }
 
-const AdminPanel: React.FC = () => {
+interface AdminLog {
+  id: string
+  action: string
+  target_user_id: string
+  created_at: string
+  details: Record<string, unknown>
+  target_user?: {
+    email: string
+    full_name: string
+  }
+}
+
+const AdminPanelContent: React.FC = () => {
   const { user } = useAuth()
+  const { addNotification } = useNotification()
+  const { confirm } = useConfirmation()
   const [isAdmin, setIsAdmin] = useState(false)
   const [loading, setLoading] = useState(true)
   const [pendingUsers, setPendingUsers] = useState<PendingUser[]>([])
   const [userStats, setUserStats] = useState<UserStats>({ total: 0, active: 0, pending: 0, inactive: 0 })
   const [actionLoading, setActionLoading] = useState<string | null>(null)
+  const [adminLogs, setAdminLogs] = useState<AdminLog[]>([])
+  const [showLogs, setShowLogs] = useState(false)
+  const [refreshing, setRefreshing] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   // 檢查是否為管理員
   useEffect(() => {
@@ -45,6 +79,7 @@ const AdminPanel: React.FC = () => {
       }
 
       try {
+        setError(null)
         const { data, error } = await supabase
           .from('user_profiles')
           .select('role, status')
@@ -53,20 +88,41 @@ const AdminPanel: React.FC = () => {
 
         if (error) {
           console.error('檢查管理員狀態錯誤:', error)
+          setError('無法驗證管理員權限')
           setIsAdmin(false)
+          addNotification({
+            type: 'error',
+            title: '權限驗證失敗',
+            message: '無法驗證您的管理員權限，請稍後再試'
+          })
         } else {
-          setIsAdmin(data?.role === 'admin' && data?.status === 'active')
+          const isValidAdmin = data?.role === 'admin' && data?.status === 'active'
+          setIsAdmin(isValidAdmin)
+          
+          if (isValidAdmin) {
+            addNotification({
+              type: 'success',
+              title: '歡迎回來',
+              message: '管理員權限驗證成功'
+            })
+          }
         }
       } catch (error) {
         console.error('檢查管理員狀態錯誤:', error)
+        setError('系統錯誤')
         setIsAdmin(false)
+        addNotification({
+          type: 'error',
+          title: '系統錯誤',
+          message: '系統發生錯誤，請稍後再試'
+        })
       } finally {
         setLoading(false)
       }
     }
 
     checkAdminStatus()
-  }, [user])
+  }, [user, addNotification])
 
   // 載入待審核用戶
   useEffect(() => {
@@ -359,6 +415,16 @@ const AdminPanel: React.FC = () => {
         </Card>
       </div>
     </div>
+  )
+}
+
+const AdminPanel: React.FC = () => {
+  return (
+    <NotificationProvider>
+      <ConfirmationProvider>
+        <AdminPanelContent />
+      </ConfirmationProvider>
+    </NotificationProvider>
   )
 }
 
