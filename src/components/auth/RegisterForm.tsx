@@ -108,13 +108,13 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onToggleMode }) => {
             註冊成功！
           </h3>
           <p className="text-txn-primary-600 dark:text-gray-400 mb-6">
-            我們已發送確認郵件到您的信箱，請點擊郵件中的連結來啟用您的帳戶。
+            您的帳戶已成功建立，現在可以直接登入使用 TXN 交易日誌系統。
           </p>
           <Button
             variant="primary"
             onClick={onToggleMode}
           >
-            返回登入
+            立即登入
           </Button>
         </CardContent>
       </Card>
