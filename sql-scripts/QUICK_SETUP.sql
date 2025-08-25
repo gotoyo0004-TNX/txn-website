@@ -40,7 +40,7 @@ AND event_object_table IN ('user_profiles', 'strategies', 'trades')
 ORDER BY event_object_table;
 
 -- ✅ 成功指標：
--- 1. validate_txn_database() 顯示所有表格 exists = true
+-- 1. validate_txn_database() 顯示所有表格 table_exists = true
 -- 2. 每個表格都有相應的 RLS 政策
 -- 3. 觸發器正確建立
 

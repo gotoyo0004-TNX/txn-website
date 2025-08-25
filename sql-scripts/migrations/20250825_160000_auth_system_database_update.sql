@@ -354,14 +354,14 @@ CREATE INDEX IF NOT EXISTS idx_trades_user_strategy_time ON public.trades(user_i
 CREATE OR REPLACE FUNCTION validate_txn_database()
 RETURNS TABLE(
     table_name TEXT,
-    exists BOOLEAN,
+    table_exists BOOLEAN,
     policies_count BIGINT
 ) AS $$
 BEGIN
     RETURN QUERY
     SELECT 
         t.table_name::TEXT,
-        true as exists,
+        true as table_exists,
         (SELECT COUNT(*) FROM pg_policies WHERE tablename = t.table_name) as policies_count
     FROM information_schema.tables t
     WHERE t.table_schema = 'public'
