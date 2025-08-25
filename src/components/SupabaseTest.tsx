@@ -6,10 +6,10 @@ import { supabase } from '@/lib/supabase'
 interface DatabaseStatus {
   connection: 'testing' | 'connected' | 'failed'
   tables: {
-    users: boolean
-    projects: boolean
-    tasks: boolean
-    activity_logs: boolean
+    user_profiles: boolean
+    strategies: boolean
+    trades: boolean
+    performance_snapshots: boolean
   }
   error: string | null
 }
@@ -18,10 +18,10 @@ export default function SupabaseTest() {
   const [status, setStatus] = useState<DatabaseStatus>({
     connection: 'testing',
     tables: {
-      users: false,
-      projects: false,
-      tasks: false,
-      activity_logs: false
+      user_profiles: false,
+      strategies: false,
+      trades: false,
+      performance_snapshots: false
     },
     error: null
   })
@@ -50,7 +50,7 @@ export default function SupabaseTest() {
           .from('information_schema.tables')
           .select('table_name')
           .eq('table_schema', 'public')
-          .in('table_name', ['users', 'projects', 'tasks', 'activity_logs'])
+          .in('table_name', ['user_profiles', 'strategies', 'trades', 'performance_snapshots'])
         
         if (tableError) {
           setStatus(prev => ({
@@ -66,10 +66,10 @@ export default function SupabaseTest() {
         setStatus({
           connection: 'connected',
           tables: {
-            users: existingTables.includes('users'),
-            projects: existingTables.includes('projects'),
-            tasks: existingTables.includes('tasks'),
-            activity_logs: existingTables.includes('activity_logs')
+            user_profiles: existingTables.includes('user_profiles'),
+            strategies: existingTables.includes('strategies'),
+            trades: existingTables.includes('trades'),
+            performance_snapshots: existingTables.includes('performance_snapshots')
           },
           error: null
         })
@@ -170,27 +170,27 @@ export default function SupabaseTest() {
           
           <div className="grid grid-cols-2 gap-4 mb-4">
             <div className="flex items-center gap-2">
-              <span>{status.tables.users ? '✅' : '❌'}</span>
-              <span className={status.tables.users ? 'text-green-600' : 'text-red-600'}>
-                users (用戶)
+              <span>{status.tables.user_profiles ? '✅' : '❌'}</span>
+              <span className={status.tables.user_profiles ? 'text-green-600' : 'text-red-600'}>
+                user_profiles (用戶資料)
               </span>
             </div>
             <div className="flex items-center gap-2">
-              <span>{status.tables.projects ? '✅' : '❌'}</span>
-              <span className={status.tables.projects ? 'text-green-600' : 'text-red-600'}>
-                projects (專案)
+              <span>{status.tables.strategies ? '✅' : '❌'}</span>
+              <span className={status.tables.strategies ? 'text-green-600' : 'text-red-600'}>
+                strategies (交易策略)
               </span>
             </div>
             <div className="flex items-center gap-2">
-              <span>{status.tables.tasks ? '✅' : '❌'}</span>
-              <span className={status.tables.tasks ? 'text-green-600' : 'text-red-600'}>
-                tasks (任務)
+              <span>{status.tables.trades ? '✅' : '❌'}</span>
+              <span className={status.tables.trades ? 'text-green-600' : 'text-red-600'}>
+                trades (交易記錄)
               </span>
             </div>
             <div className="flex items-center gap-2">
-              <span>{status.tables.activity_logs ? '✅' : '❌'}</span>
-              <span className={status.tables.activity_logs ? 'text-green-600' : 'text-red-600'}>
-                activity_logs (日誌)
+              <span>{status.tables.performance_snapshots ? '✅' : '❌'}</span>
+              <span className={status.tables.performance_snapshots ? 'text-green-600' : 'text-red-600'}>
+                performance_snapshots (績效快照)
               </span>
             </div>
           </div>
@@ -208,10 +208,10 @@ export default function SupabaseTest() {
               </span>
               <span className="font-medium">
                 {tablesSetup 
-                  ? '資料庫結構完整！可以開始開發功能' 
+                  ? 'TXN 資料庫結構完整！可以開始交易日誌功能開發' 
                   : someTablesExist 
                     ? '部分資料表存在，可能需要完整的遷移'
-                    : '尚未建立資料表，需要執行 SQL 腳本'}
+                    : '尚未建立 TXN 專用資料表，需要執行 SQL 腳本'}
               </span>
             </div>
           </div>
@@ -239,7 +239,7 @@ export default function SupabaseTest() {
                 請在 Supabase Dashboard 的 SQL Editor 中執行提供的 SQL 腳本來建立資料表。
               </p>
               <p className="text-sm text-blue-600">
-                腳本位置：<code className="bg-blue-100 px-1 rounded">sql-scripts/migrations/20240825_143000_initial_database_setup.sql</code>
+                腳本位置：<code className="bg-blue-100 px-1 rounded">sql-scripts/migrations/20240825_150000_txn_database_structure.sql</code>
               </p>
             </div>
           )}
