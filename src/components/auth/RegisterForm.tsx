@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
-import { Button, Input, Card, CardHeader, CardTitle, CardContent, Badge } from '@/components/ui'
+import { Button, Input, Card, CardHeader, CardTitle, CardContent } from '@/components/ui'
 import { EyeIcon, EyeSlashIcon, EnvelopeIcon, LockClosedIcon, UserIcon } from '@heroicons/react/24/outline'
 
 interface RegisterFormProps {
@@ -78,7 +78,8 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onToggleMode }) => {
       } else {
         setSuccess(true)
       }
-    } catch (err) {
+    } catch (error) {
+      console.error('註冊錯誤:', error)
       setError('註冊時發生錯誤，請稍後再試')
     } finally {
       setLoading(false)

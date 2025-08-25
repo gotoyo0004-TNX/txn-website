@@ -38,7 +38,8 @@ const LoginForm: React.FC<LoginFormProps> = ({ onToggleMode, onForgotPassword })
       if (error) {
         setError(getErrorMessage(error.message))
       }
-    } catch (err) {
+    } catch (error) {
+      console.error('登入錯誤:', error)
       setError('登入時發生錯誤，請稍後再試')
     } finally {
       setLoading(false)

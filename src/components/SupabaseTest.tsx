@@ -30,7 +30,7 @@ export default function SupabaseTest() {
     async function testConnection() {
       try {
         // 測試基本連接
-        const { data: connectionTest, error: connectionError } = await supabase
+        const { error: connectionError } = await supabase
           .from('information_schema.tables')
           .select('table_name')
           .eq('table_schema', 'public')

@@ -1,4 +1,3 @@
-import Image from "next/image";
 import SupabaseTest from "@/components/SupabaseTest";
 import Navigation from "@/components/layout/Navigation";
 import { Button, Card, CardHeader, CardTitle, CardContent, Badge } from "@/components/ui";

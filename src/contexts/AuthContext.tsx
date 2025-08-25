@@ -8,11 +8,11 @@ interface AuthContextType {
   user: User | null
   session: Session | null
   loading: boolean
-  signUp: (email: string, password: string, userData?: any) => Promise<{ error: AuthError | null }>
+  signUp: (email: string, password: string, userData?: Record<string, unknown>) => Promise<{ error: AuthError | null }>
   signIn: (email: string, password: string) => Promise<{ error: AuthError | null }>
   signOut: () => Promise<void>
   resetPassword: (email: string) => Promise<{ error: AuthError | null }>
-  updateProfile: (userData: any) => Promise<{ error: any }>
+  updateProfile: (userData: Record<string, unknown>) => Promise<{ error: Error | null }>
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -122,7 +122,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   }
 
   // 註冊
-  const signUp = async (email: string, password: string, userData?: any) => {
+  const signUp = async (email: string, password: string, userData?: Record<string, unknown>) => {
     try {
       const { error } = await supabase.auth.signUp({
         email,
@@ -169,7 +169,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   }
 
   // 更新個人資料
-  const updateProfile = async (userData: any) => {
+  const updateProfile = async (userData: Record<string, unknown>) => {
     try {
       if (!user) throw new Error('No user logged in')
 
@@ -178,9 +178,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         .update(userData)
         .eq('id', user.id)
 
-      return { error }
+      return { error: error as Error | null }
     } catch (error) {
-      return { error }
+      return { error: error as Error }
     }
   }
 

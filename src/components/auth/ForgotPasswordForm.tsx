@@ -29,7 +29,8 @@ const ForgotPasswordForm: React.FC<ForgotPasswordFormProps> = ({ onBackToLogin }
       } else {
         setSuccess(true)
       }
-    } catch (err) {
+    } catch (error) {
+      console.error('密碼重設錯誤:', error)
       setError('發送重設郵件時發生錯誤，請稍後再試')
     } finally {
       setLoading(false)
