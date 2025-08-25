@@ -21,7 +21,7 @@ import {
   ClockIcon,
   ExclamationTriangleIcon,
   DocumentTextIcon,
-  RefreshIcon,
+  ArrowPathIcon,
   EyeIcon
 } from '@heroicons/react/24/outline'
 
@@ -136,17 +136,27 @@ const AdminPanelContent: React.FC = () => {
     try {
       const { data, error } = await supabase
         .from('user_profiles')
-        .select('id, email, full_name, trading_experience, initial_capital, created_at')
+        .select('id, email, full_name, trading_experience, initial_capital, created_at, role, currency, timezone')
         .eq('status', 'pending')
         .order('created_at', { ascending: true })
 
       if (error) {
         console.error('載入待審核用戶錯誤:', error)
+        addNotification({
+          type: 'error',
+          title: '載入失敗',
+          message: '無法載入待審核用戶列表'
+        })
       } else {
         setPendingUsers(data || [])
       }
     } catch (error) {
       console.error('載入待審核用戶錯誤:', error)
+      addNotification({
+        type: 'error',
+        title: '系統錯誤',
+        message: '載入數據時發生錯誤'
+      })
     }
   }
 
