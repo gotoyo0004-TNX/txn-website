@@ -13,7 +13,7 @@ import {
   NotificationProvider,
   ConfirmationProvider 
 } from '@/components/ui'
-import Navigation from '@/components/layout/Navigation'
+import AdminDebugPanel from '@/components/debug/AdminDebugPanel'
 import { 
   ExclamationTriangleIcon, 
   XCircleIcon,
@@ -175,24 +175,31 @@ const AdminLayoutContent: React.FC<AdminLayoutProps> = ({ children }) => {
   if (!isAdmin || error) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-txn-primary-50 to-txn-accent-50 dark:from-txn-primary-900 dark:to-txn-primary-800 flex items-center justify-center p-4">
-        <Card variant="elevated" className="w-full max-w-md">
-          <CardContent className="text-center py-8">
-            <XCircleIcon className="h-16 w-16 text-red-500 mx-auto mb-4" />
-            <h3 className="text-xl font-semibold mb-2">訪問被拒絕</h3>
-            <p className="text-gray-600 mb-4">
-              {error || '您沒有管理員權限訪問此頁面'}
-            </p>
-            <div className="flex gap-2 justify-center">
-              <Button variant="outline" onClick={goToHome}>
-                回到首頁
-              </Button>
-              <Button variant="primary" onClick={handleLogout}>
-                <ArrowLeftOnRectangleIcon className="h-4 w-4 mr-1" />
-                登出
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+        <div className="w-full max-w-4xl space-y-6">
+          <Card variant="elevated" className="w-full">
+            <CardContent className="text-center py-8">
+              <XCircleIcon className="h-16 w-16 text-red-500 mx-auto mb-4" />
+              <h3 className="text-xl font-semibold mb-2">訪問被拒絕</h3>
+              <p className="text-gray-600 mb-4">
+                {error || '您沒有管理員權限訪問此頁面'}
+              </p>
+              <div className="flex gap-2 justify-center">
+                <Button variant="outline" onClick={goToHome}>
+                  回到首頁
+                </Button>
+                <Button variant="primary" onClick={handleLogout}>
+                  <ArrowLeftOnRectangleIcon className="h-4 w-4 mr-1" />
+                  登出
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+          
+          {/* 調試面板 - 只在開發模式下顯示 */}
+          {process.env.NODE_ENV === 'development' && (
+            <AdminDebugPanel />
+          )}
+        </div>
       </div>
     )
   }
