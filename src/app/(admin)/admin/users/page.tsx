@@ -28,12 +28,8 @@ import { useConfirmation } from '@/components/ui/ConfirmationProvider'
 import { 
   UserGroupIcon,
   MagnifyingGlassIcon,
-  FunnelIcon,
   ArrowPathIcon,
   PencilIcon,
-  TrashIcon,
-  UserPlusIcon,
-  CheckIcon,
   XMarkIcon
 } from '@heroicons/react/24/outline'
 
@@ -61,7 +57,7 @@ interface UserListFilters {
 
 const UsersManagementPage: React.FC = () => {
   const { user } = useAuth()
-  const { showSuccess, showError, showWarning, showInfo } = useNotification()
+  const { showSuccess, showError, showInfo } = useNotification()
   const { confirm } = useConfirmation()
 
   // 狀態管理
@@ -425,13 +421,13 @@ const UsersManagementPage: React.FC = () => {
                             {user.full_name || '未提供姓名'}
                           </h4>
                           <Badge 
-                            variant={ROLE_COLORS[user.role] as any}
+                            variant={ROLE_COLORS[user.role] as "default" | "success" | "danger" | "warning" | "info" | "profit" | "loss"}
                             size="sm"
                           >
                             {ROLE_DISPLAY_NAMES[user.role]}
                           </Badge>
                           <Badge 
-                            variant={STATUS_COLORS[user.status] as any}
+                            variant={STATUS_COLORS[user.status] as "default" | "success" | "danger" | "warning" | "info" | "profit" | "loss"}
                             size="sm"
                           >
                             {STATUS_DISPLAY_NAMES[user.status]}
