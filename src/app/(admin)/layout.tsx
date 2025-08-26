@@ -105,11 +105,21 @@ const AdminLayoutContent: React.FC<AdminLayoutProps> = ({ children }) => {
       try {
         setError(null)
         
+        // 創建超時Promise（10秒）
+        const timeoutPromise = new Promise((_, reject) => {
+          setTimeout(() => reject(new Error('管理員權限檢查超時')), 10000)
+        })
+        
         // 首先測試 Supabase 連接
-        const { error: connectionError } = await supabase
+        const connectionPromise = supabase
           .from('user_profiles')
           .select('id')
           .limit(1)
+          
+        const { error: connectionError } = await Promise.race([
+          connectionPromise,
+          timeoutPromise
+        ]) as { error: any }
           
         if (connectionError) {
           console.error('Supabase 連接錯誤:', connectionError)
@@ -119,12 +129,17 @@ const AdminLayoutContent: React.FC<AdminLayoutProps> = ({ children }) => {
           return
         }
         
-        // 然後檢查用戶權限
-        const { data, error } = await supabase
+        // 然後檢查用戶權限（也加上超時）
+        const userCheckPromise = supabase
           .from('user_profiles')
           .select('role, status')
           .eq('id', user.id)
           .single()
+          
+        const { data, error } = await Promise.race([
+          userCheckPromise,
+          timeoutPromise
+        ]) as { data: any, error: any }
 
         if (error) {
           console.error('檢查管理員權限錯誤:', error)
@@ -168,7 +183,20 @@ const AdminLayoutContent: React.FC<AdminLayoutProps> = ({ children }) => {
         }
       } catch (error) {
         console.error('檢查管理員權限錯誤:', error)
-        setError('系統錯誤')
+        
+        let errorMessage = '系統錯誤'
+        
+        if (error instanceof Error) {
+          if (error.message.includes('超時')) {
+            errorMessage = '管理員權限檢查超時，請稍後再試或檢查網路連線'
+          } else if (error.message.includes('Failed to fetch')) {
+            errorMessage = '網路連線問題，請檢查網路設定'
+          } else {
+            errorMessage = error.message
+          }
+        }
+        
+        setError(errorMessage)
         setIsAdmin(false)
         setUserRole(null)
       } finally {
