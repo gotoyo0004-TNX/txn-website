@@ -37,6 +37,12 @@ export const supabaseWithRetry = {
       } catch (error: any) {
         lastError = error
         
+        // 特殊處理：如果是路由相關錯誤，不進行重試
+        if (this.isRouteError(error)) {
+          console.warn('路由錯誤，跳過重試:', error.message)
+          throw error
+        }
+        
         // 如果是網路錯誤或連接錯誤，進行重試
         if (attempt < maxRetries && this.shouldRetry(error)) {
           console.warn(`Supabase 查詢重試 ${attempt}/${maxRetries}:`, error.message)
@@ -49,6 +55,20 @@ export const supabaseWithRetry = {
     }
     
     throw lastError
+  },
+  
+  isRouteError(error: any): boolean {
+    // 檢查是否為路由相關錯誤
+    const routeErrors = [
+      '404',
+      'not found',
+      'route not found',
+      'page not found'
+    ]
+    
+    return routeErrors.some(errorType => 
+      error.message?.toLowerCase().includes(errorType.toLowerCase())
+    )
   },
   
   shouldRetry(error: any): boolean {
@@ -69,6 +89,28 @@ export const supabaseWithRetry = {
   
   delay(ms: number): Promise<void> {
     return new Promise(resolve => setTimeout(resolve, ms))
+  }
+}
+
+// 添加連接池清理函數
+export const cleanupSupabaseConnections = () => {
+  // 清理可能被污染的連接
+  if (typeof window !== 'undefined') {
+    console.log('清理 Supabase 連接池...')
+    // 強制清理本地存儲中的過期會話
+    const keys = Object.keys(localStorage)
+    keys.forEach(key => {
+      if (key.startsWith('sb-') && key.includes('auth-token')) {
+        try {
+          const token = JSON.parse(localStorage.getItem(key) || '{}')
+          if (token.expires_at && new Date(token.expires_at * 1000) < new Date()) {
+            localStorage.removeItem(key)
+          }
+        } catch (e) {
+          // 忽略解析錯誤
+        }
+      }
+    })
   }
 }
 

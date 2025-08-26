@@ -1,0 +1,13 @@
+# Netlify 重定向規則 - 修復 404 問題
+
+# 管理員頁面路由
+/admin/analytics /admin/analytics 200
+/admin/settings /admin/settings 200
+/admin/users /admin/users 200
+/admin/* /admin/:splat 200
+
+# API 路由（如果有）
+/api/* /api/:splat 200
+
+# 主要 SPA 後備路由
+/* /index.html 200

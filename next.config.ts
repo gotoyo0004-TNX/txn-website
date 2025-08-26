@@ -8,6 +8,15 @@ const nextConfig: NextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
+  // 優化路由處理
+  async rewrites() {
+    return [
+      {
+        source: '/admin/:path*',
+        destination: '/admin/:path*'
+      }
+    ]
+  }
 };
 
 export default nextConfig;
