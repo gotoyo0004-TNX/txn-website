@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
-import { supabase } from '@/lib/supabase'
+import { supabase, queryWithRetry } from '@/lib/supabase'
 import { useRouter, usePathname } from 'next/navigation'
 import { canAccessAdminPanel, UserRole, isValidRole } from '@/lib/constants'
 import { 
@@ -105,22 +105,22 @@ const AdminLayoutContent: React.FC<AdminLayoutProps> = ({ children }) => {
       try {
         setError(null)
         
-        // 創建超時Promise（5秒 - 縮短超時時間）
-        const timeoutPromise = new Promise((_, reject) => {
-          setTimeout(() => reject(new Error('管理員權限檢查超時')), 5000)
+        // 使用重試機制進行管理員權限檢查
+        const result = await queryWithRetry(async () => {
+          const timeoutPromise = new Promise((_, reject) => {
+            setTimeout(() => reject(new Error('管理員權限檢查超時')), 8000) // 增加到 8 秒
+          })
+          
+          const userCheckPromise = supabase
+            .from('user_profiles')
+            .select('role, status')
+            .eq('id', user.id)
+            .single()
+            
+          return Promise.race([userCheckPromise, timeoutPromise])
         })
         
-        // 直接檢查用戶權限，跳過連接測試以減少查詢數量
-        const userCheckPromise = supabase
-          .from('user_profiles')
-          .select('role, status')
-          .eq('id', user.id)
-          .single()
-          
-        const { data, error } = await Promise.race([
-          userCheckPromise,
-          timeoutPromise
-        ]) as { data: any, error: any }
+        const { data, error } = result as { data: any, error: any }
 
         if (error) {
           console.error('檢查管理員權限錯誤:', error)

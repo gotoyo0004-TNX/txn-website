@@ -182,13 +182,16 @@ ALTER TABLE public.user_profiles ENABLE ROW LEVEL SECURITY;
 DO $$
 DECLARE
     table_name TEXT;
+    r RECORD;
 BEGIN
     FOR table_name IN SELECT unnest(ARRAY['strategies', 'trades', 'performance_snapshots']) LOOP
         -- 禁用 RLS
         EXECUTE 'ALTER TABLE public.' || table_name || ' DISABLE ROW LEVEL SECURITY';
         
-        -- 清理策略
-        DELETE FROM pg_policies WHERE tablename = table_name AND schemaname = 'public';
+        -- 清理策略（使用正確的方法）
+        FOR r IN EXECUTE 'SELECT policyname FROM pg_policies WHERE tablename = $1 AND schemaname = ''public''' USING table_name LOOP
+            EXECUTE 'DROP POLICY IF EXISTS ' || quote_ident(r.policyname) || ' ON public.' || table_name;
+        END LOOP;
         
         -- 創建簡單策略
         EXECUTE 'CREATE POLICY "simple_all_access" ON public.' || table_name || ' FOR ALL TO authenticated USING (true) WITH CHECK (true)';
