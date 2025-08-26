@@ -14,8 +14,15 @@
    Tailwind CSS v4 主題配置
    ============================================= */
 
-/* Tailwind CSS v4 主題配置 - VS Code CSS 檢查器可能不認識 @theme 語法 */
-/* stylelint-disable-next-line at-rule-no-unknown */
+/* Tailwind CSS v4 主題配置 */
+/* 
+ * 注意：某些 CSS linter 可能不認識 @theme 語法，這是正常的 Tailwind CSS v4 功能
+ * 以下註釋用於抑制各種 CSS linter 的警告
+ */
+/* stylelint-disable at-rule-no-unknown */
+/* postcss-disable-next-line at-rule-no-unknown */
+/* csslint ignore:start */
+/* @ts-nocheck */
 @theme {
   /* TXN 品牌色彩系統 */
   --color-txn-primary-50: #F7FAFC;
@@ -76,6 +83,8 @@
   --shadow-txn-lg: 0 8px 16px rgb(26 32 44 / 0.15), 0 4px 8px rgb(26 32 44 / 0.1);
   --shadow-txn-xl: 0 16px 32px rgb(26 32 44 / 0.2), 0 8px 16px rgb(26 32 44 / 0.15);
 }
+/* stylelint-enable at-rule-no-unknown */
+/* csslint ignore:end */
 
 /* =============================================
    CSS 自定義屬性 - TXN 色彩計畫

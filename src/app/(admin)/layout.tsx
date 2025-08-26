@@ -14,6 +14,7 @@ import {
   ConfirmationProvider 
 } from '@/components/ui'
 import AdminDebugPanel from '@/components/debug/AdminDebugPanel'
+import LoadingDebugger from '@/components/debug/LoadingDebugger'
 import { 
   ExclamationTriangleIcon, 
   XCircleIcon,
@@ -141,11 +142,29 @@ const AdminLayoutContent: React.FC<AdminLayoutProps> = ({ children }) => {
     router.push('/')
   }
 
-  // 載入中狀態
+  // 載入中狀態 - 顯示詳細調試信息
   if (loading || authLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-txn-primary-50 to-txn-accent-50 dark:from-txn-primary-900 dark:to-txn-primary-800 flex items-center justify-center">
-        <Loading size="xl" />
+      <div className="min-h-screen bg-gradient-to-br from-txn-primary-50 to-txn-accent-50 dark:from-txn-primary-900 dark:to-txn-primary-800">
+        <div className="flex items-center justify-center py-8">
+          <div className="w-full max-w-4xl space-y-6 px-4">
+            {/* 標準載入指示器 */}
+            <Card variant="elevated" className="w-full">
+              <CardContent className="text-center py-8">
+                <Loading size="xl" />
+                <p className="mt-4 text-lg font-medium">載入管理面板中...</p>
+                <p className="text-sm text-gray-600 mt-2">
+                  如果載入時間過長，請查看下方診斷信息
+                </p>
+              </CardContent>
+            </Card>
+            
+            {/* 載入問題調試工具 - 只在開發模式或載入超過 3 秒後顯示 */}
+            {process.env.NODE_ENV === 'development' && (
+              <LoadingDebugger />
+            )}
+          </div>
+        </div>
       </div>
     )
   }

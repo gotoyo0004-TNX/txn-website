@@ -4,6 +4,7 @@
   "css.lint.unknownAtRules": "ignore",
   "scss.lint.unknownAtRules": "ignore",
   "less.lint.unknownAtRules": "ignore",
+  "css.lint.validProperties": [],
   "css.completion.completePropertyWithSemicolon": true,
   "css.completion.triggerPropertyValueCompletion": true,
   "emmet.includeLanguages": {
@@ -15,5 +16,10 @@
   },
   "editor.quickSuggestions": {
     "strings": true
-  }
+  },
+  "tailwindCSS.experimental.classRegex": [
+    ["cva\\(([^)]*)\\)", "[\"'`]([^\"'`]*).*?[\"'`]"],
+    ["cx\\(([^)]*)\\)", "(?:'|\"|`)([^']*)(?:'|\"|`)"],
+    ["cn\\(([^)]*)\\)", "(?:'|\"|`)([^']*)(?:'|\"|`)"]
+  ]
 }
