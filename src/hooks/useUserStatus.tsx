@@ -104,7 +104,7 @@ export const useUserStatus = (): UserStatusReturn => {
 // 用戶狀態檢查組件
 interface UserStatusGuardProps {
   children: React.ReactNode
-  allowedStatuses?: Array<'active' | 'inactive' | 'pending'>
+  allowedStatuses?: UserStatus[]
   requireAdmin?: boolean
   fallback?: React.ReactNode
 }

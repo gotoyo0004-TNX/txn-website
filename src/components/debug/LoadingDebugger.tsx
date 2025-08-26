@@ -66,13 +66,26 @@ export const LoadingDebugger: React.FC = () => {
         // 不需要使用 connectionTest 變數，只檢查是否有錯誤
 
         if (connError) {
-          addLog('SUPABASE_CONNECTION', 'error', `Supabase 連接失敗: ${connError.message}`, connError)
+          console.error('Supabase 連接錯誤:', connError)
+          addLog('SUPABASE_CONNECTION', 'error', `Supabase 連接失敗: ${connError.message}`, {
+            error: {
+              code: connError.code,
+              message: connError.message,
+              details: connError.details,
+              hint: connError.hint
+            }
+          })
           return
         }
 
         addLog('SUPABASE_CONNECTION', 'success', 'Supabase 連接正常')
       } catch (error) {
-        addLog('SUPABASE_CONNECTION', 'error', `Supabase 連接異常: ${error}`, error)
+        addLog('SUPABASE_CONNECTION', 'error', `Supabase 連接異常: ${error}`, {
+          error: {
+            message: error instanceof Error ? error.message : String(error),
+            type: typeof error
+          }
+        })
         return
       }
 
@@ -87,7 +100,15 @@ export const LoadingDebugger: React.FC = () => {
           .single()
 
         if (profileError) {
-          addLog('USER_PROFILE', 'error', `用戶資料查詢失敗: ${profileError.message}`, profileError)
+          console.error('用戶資料查詢錯誤:', profileError)
+          addLog('USER_PROFILE', 'error', `用戶資料查詢失敗: ${profileError.message}`, {
+            error: {
+              code: profileError.code,
+              message: profileError.message,
+              details: profileError.details,
+              hint: profileError.hint
+            }
+          })
           
           // 如果是因為資料不存在，提供解決方案
           if (profileError.code === 'PGRST116') {
@@ -98,7 +119,7 @@ export const LoadingDebugger: React.FC = () => {
           return
         }
 
-        addLog('USER_PROFILE', 'success', '用戶資料查詢成功', profileData)
+        addLog('USER_PROFILE', 'success', '用戶資料查詢成功', profileData && typeof profileData === 'object' ? profileData : { data: 'Profile data received' })
 
         // 步驟 4: 檢查權限
         addLog('PERMISSION_CHECK', 'loading', '檢查管理員權限...')
@@ -144,7 +165,15 @@ export const LoadingDebugger: React.FC = () => {
             .limit(5)
 
           if (rlsError) {
-            addLog('RLS_CHECK', 'error', `RLS 策略阻止查詢: ${rlsError.message}`, rlsError)
+            console.error('RLS 查詢錯誤:', rlsError)
+            addLog('RLS_CHECK', 'error', `RLS 策略阻止查詢: ${rlsError.message}`, {
+              error: {
+                code: rlsError.code,
+                message: rlsError.message,
+                details: rlsError.details,
+                hint: rlsError.hint
+              }
+            })
             return
           }
 
@@ -154,7 +183,12 @@ export const LoadingDebugger: React.FC = () => {
           })
 
         } catch (error) {
-          addLog('RLS_CHECK', 'error', `RLS 檢查異常: ${error}`, error)
+          addLog('RLS_CHECK', 'error', `RLS 檢查異常: ${error}`, {
+            error: {
+              message: error instanceof Error ? error.message : String(error),
+              type: typeof error
+            }
+          })
           return
         }
 
@@ -164,11 +198,22 @@ export const LoadingDebugger: React.FC = () => {
         })
 
       } catch (error) {
-        addLog('USER_PROFILE', 'error', `用戶資料查詢異常: ${error}`, error)
+        addLog('USER_PROFILE', 'error', `用戶資料查詢異常: ${error}`, {
+          error: {
+            message: error instanceof Error ? error.message : String(error),
+            type: typeof error
+          }
+        })
       }
 
     } catch (error) {
-      addLog('GENERAL_ERROR', 'error', `診斷過程發生錯誤: ${error}`, error as any)
+      console.error('診斷過程發生錯誤:', error)
+      addLog('GENERAL_ERROR', 'error', `診斷過程發生錯誤: ${error}`, {
+        error: {
+          message: error instanceof Error ? error.message : String(error),
+          type: typeof error
+        }
+      })
     } finally {
       setIsDebugging(false)
     }

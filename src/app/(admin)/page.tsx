@@ -65,7 +65,18 @@ const AdminDashboardPage: React.FC = () => {
 
         if (error) {
           console.error('檢查管理員權限錯誤:', error)
-          showError('權限驗證失敗', '無法驗證管理員權限')
+          
+          // 提供更詳細的錯誤信息
+          let errorMessage = '無法驗證管理員權限'
+          if (error.code === 'PGRST116') {
+            errorMessage = '用戶資料不存在，請聯繫系統管理員'
+          } else if (error.message?.includes('row level security')) {
+            errorMessage = '資料庫權限設定問題，請聯繫技術支援'
+          } else if (error.code) {
+            errorMessage = `資料庫錯誤 (${error.code}): ${error.message}`
+          }
+          
+          showError('權限驗證失敗', errorMessage)
           router.push('/')
         } else {
           const role = data?.role as UserRole

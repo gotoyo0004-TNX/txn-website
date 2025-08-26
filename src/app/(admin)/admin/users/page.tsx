@@ -77,6 +77,31 @@ const UsersManagementPage: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1)
   const [pageSize, setPageSize] = useState<number>(PAGINATION_CONFIG.DEFAULT_PAGE_SIZE)
 
+  // 載入用戶列表
+  const loadUsers = useCallback(async () => {
+    if (!currentUserRole) return
+    
+    setLoading(true)
+    try {
+      const { data, error } = await supabase
+        .from('user_profiles')
+        .select('*')
+        .order('created_at', { ascending: false })
+
+      if (error) {
+        console.error('載入用戶列表錯誤:', error)
+        showError('載入失敗', '無法載入用戶列表：' + error.message)
+      } else {
+        setUsers(data || [])
+      }
+    } catch (error) {
+      console.error('載入用戶列表錯誤:', error)
+      showError('系統錯誤', '載入用戶列表時發生錯誤')
+    } finally {
+      setLoading(false)
+    }
+  }, [currentUserRole, showError])
+
   // 載入當前用戶角色
   useEffect(() => {
     const loadCurrentUserRole = async () => {

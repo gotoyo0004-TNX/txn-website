@@ -40,6 +40,7 @@ export const AdminDebugPanel: React.FC = () => {
         .single()
 
       if (error) {
+        console.error('資料庫查詢錯誤:', error)
         errors.push(`資料庫查詢錯誤: ${error.message}`)
       } else {
         profileData = data
@@ -58,15 +59,28 @@ export const AdminDebugPanel: React.FC = () => {
       }
 
       setDebugInfo({
-        authUser: user,
+        authUser: {
+          id: user.id,
+          email: user.email,
+          email_confirmed_at: user.email_confirmed_at,
+          created_at: user.created_at,
+          last_sign_in_at: user.last_sign_in_at
+        },
         profileData,
         hasAdminAccess,
         errors
       })
     } catch (error) {
-      errors.push(`系統錯誤: ${error}`)
+      console.error('系統錯誤:', error)
+      errors.push(`系統錯誤: ${error instanceof Error ? error.message : String(error)}`)
       setDebugInfo({
-        authUser: user,
+        authUser: {
+          id: user.id,
+          email: user.email,
+          email_confirmed_at: user.email_confirmed_at,
+          created_at: user.created_at,
+          last_sign_in_at: user.last_sign_in_at
+        },
         profileData: null,
         hasAdminAccess: false,
         errors
@@ -106,8 +120,8 @@ export const AdminDebugPanel: React.FC = () => {
             <div>
               <h3 className="font-semibold mb-2">認證用戶信息</h3>
               <div className="bg-gray-50 p-3 rounded text-sm">
-                <p><strong>UUID:</strong> {debugInfo.authUser.id}</p>
-                <p><strong>Email:</strong> {debugInfo.authUser.email}</p>
+                <p><strong>UUID:</strong> {String(debugInfo.authUser.id || '未知')}</p>
+                <p><strong>Email:</strong> {String(debugInfo.authUser.email || '未知')}</p>
                 <p><strong>Email 已驗證:</strong> {debugInfo.authUser.email_confirmed_at ? '是' : '否'}</p>
               </div>
             </div>
@@ -118,10 +132,10 @@ export const AdminDebugPanel: React.FC = () => {
               <div className="bg-gray-50 p-3 rounded text-sm">
                 {debugInfo.profileData ? (
                   <>
-                    <p><strong>角色:</strong> {debugInfo.profileData.role} ({ROLE_DISPLAY_NAMES[debugInfo.profileData.role as UserRole] || '未知'})</p>
-                    <p><strong>狀態:</strong> {debugInfo.profileData.status}</p>
-                    <p><strong>姓名:</strong> {debugInfo.profileData.full_name || '未設定'}</p>
-                    <p><strong>建立時間:</strong> {new Date(debugInfo.profileData.created_at).toLocaleString('zh-TW')}</p>
+                    <p><strong>角色:</strong> {String(debugInfo.profileData.role || '未設定')} ({ROLE_DISPLAY_NAMES[debugInfo.profileData.role as UserRole] || '未知'})</p>
+                    <p><strong>狀態:</strong> {String(debugInfo.profileData.status || '未設定')}</p>
+                    <p><strong>姓名:</strong> {String(debugInfo.profileData.full_name || '未設定')}</p>
+                    <p><strong>建立時間:</strong> {debugInfo.profileData.created_at && typeof debugInfo.profileData.created_at === 'string' ? new Date(debugInfo.profileData.created_at).toLocaleString('zh-TW') : '未知'}</p>
                   </>
                 ) : (
                   <p className="text-red-600">無用戶資料</p>

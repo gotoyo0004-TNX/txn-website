@@ -56,7 +56,14 @@ export default function AdminTestPage() {
       // 檢查是否有錯誤，不需要使用 dbTest 變數
 
       if (dbError) {
-        addResult('DATABASE', 'fail', `資料庫連接失敗: ${dbError.message}`, dbError)
+        addResult('DATABASE', 'fail', `資料庫連接失敗: ${dbError.message}`, {
+          error: {
+            code: dbError.code,
+            message: dbError.message,
+            details: dbError.details,
+            hint: dbError.hint
+          }
+        })
         return
       }
 
@@ -73,7 +80,12 @@ export default function AdminTestPage() {
 
       if (profileError) {
         addResult('USER_PROFILE', 'fail', `用戶資料查詢失敗: ${profileError.message}`, {
-          error: profileError,
+          error: {
+            code: profileError.code,
+            message: profileError.message,
+            details: profileError.details,
+            hint: profileError.hint
+          },
           suggestion: '請執行 fix_admin_permission.sql 修復腳本'
         })
         return
@@ -115,7 +127,14 @@ export default function AdminTestPage() {
         .limit(10)
 
       if (usersError) {
-        addResult('ADMIN_QUERY', 'fail', `管理員查詢失敗: ${usersError.message}`, usersError)
+        addResult('ADMIN_QUERY', 'fail', `管理員查詢失敗: ${usersError.message}`, {
+          error: {
+            code: usersError.code,
+            message: usersError.message,
+            details: usersError.details,
+            hint: usersError.hint
+          }
+        })
         return
       }
 
@@ -136,7 +155,15 @@ export default function AdminTestPage() {
       })
 
     } catch (error) {
-      addResult('ERROR', 'fail', `測試過程發生錯誤: ${error}`, error as any)
+      console.error('測試過程發生錯誤:', error)
+      addResult('ERROR', 'fail', `測試過程發生錯誤: ${error}`, {
+        error: {
+          message: error instanceof Error ? error.message : String(error),
+          stack: error instanceof Error ? error.stack : undefined,
+          type: typeof error,
+          timestamp: new Date().toISOString()
+        }
+      })
     } finally {
       setIsRunning(false)
     }
