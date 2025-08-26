@@ -104,6 +104,22 @@ const AdminLayoutContent: React.FC<AdminLayoutProps> = ({ children }) => {
 
       try {
         setError(null)
+        
+        // 首先測試 Supabase 連接
+        const { error: connectionError } = await supabase
+          .from('user_profiles')
+          .select('id')
+          .limit(1)
+          
+        if (connectionError) {
+          console.error('Supabase 連接錯誤:', connectionError)
+          setError(`資料庫連接失敗: ${connectionError.message}`)
+          setIsAdmin(false)
+          setUserRole(null)
+          return
+        }
+        
+        // 然後檢查用戶權限
         const { data, error } = await supabase
           .from('user_profiles')
           .select('role, status')
@@ -112,7 +128,20 @@ const AdminLayoutContent: React.FC<AdminLayoutProps> = ({ children }) => {
 
         if (error) {
           console.error('檢查管理員權限錯誤:', error)
-          setError('無法驗證管理員權限')
+          
+          let errorMessage = '無法驗證管理員權限'
+          
+          if (error.code === 'PGRST116') {
+            errorMessage = '用戶資料不存在，請聯絡系統管理員'
+          } else if (error.message?.includes('row level security')) {
+            errorMessage = '資料庫權限設定問題，請聯絡技術支援'
+          } else if (error.message?.includes('permission denied')) {
+            errorMessage = '沒有權限存取用戶資料'
+          } else if (error.code) {
+            errorMessage = `資料庫錯誤 (${error.code}): ${error.message}`
+          }
+          
+          setError(errorMessage)
           setIsAdmin(false)
           setUserRole(null)
         } else {

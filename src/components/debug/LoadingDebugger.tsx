@@ -36,15 +36,17 @@ export const LoadingDebugger: React.FC = () => {
     try {
       // 步驟 1: 檢查認證狀態
       addLog('AUTH_CHECK', 'loading', '檢查用戶認證狀態...')
-      await new Promise(resolve => setTimeout(resolve, 500)) // 模擬延遲
+      await new Promise(resolve => setTimeout(resolve, 300)) // 減少延遲
       
       if (authLoading) {
         addLog('AUTH_CHECK', 'loading', '認證仍在載入中...')
+        setIsDebugging(false)
         return
       }
 
       if (!user) {
         addLog('AUTH_CHECK', 'error', '用戶未登入')
+        setIsDebugging(false)
         return
       }
 
@@ -54,16 +56,23 @@ export const LoadingDebugger: React.FC = () => {
         emailConfirmed: user.email_confirmed_at ? true : false
       })
 
-      // 步驟 2: 檢查 Supabase 連接
+      // 步驟 2: 檢查 Supabase 連接 (加入超時處理)
       addLog('SUPABASE_CONNECTION', 'loading', '檢查 Supabase 連接...')
       
-      try {
-        const { data: connectionTest, error: connError } = await supabase
-          .from('user_profiles')
-          .select('count')
-          .limit(1)
+      const connectionPromise = supabase
+        .from('user_profiles')
+        .select('id')
+        .limit(1)
         
-        // 不需要使用 connectionTest 變數，只檢查是否有錯誤
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('連接超時')), 10000)
+      )
+      
+      try {
+        const { error: connError } = await Promise.race([
+          connectionPromise,
+          timeoutPromise
+        ]) as { error: any }
 
         if (connError) {
           console.error('Supabase 連接錯誤:', connError)
@@ -75,17 +84,26 @@ export const LoadingDebugger: React.FC = () => {
               hint: connError.hint
             }
           })
+          setIsDebugging(false)
           return
         }
 
         addLog('SUPABASE_CONNECTION', 'success', 'Supabase 連接正常')
       } catch (error) {
-        addLog('SUPABASE_CONNECTION', 'error', `Supabase 連接異常: ${error}`, {
-          error: {
-            message: error instanceof Error ? error.message : String(error),
-            type: typeof error
-          }
-        })
+        if (error instanceof Error && error.message === '連接超時') {
+          addLog('SUPABASE_CONNECTION', 'error', '連接超時，請檢查網路連線或 Supabase 服務狀態', {
+            timeout: '10秒',
+            suggestion: '請稍後再試或檢查網路連線'
+          })
+        } else {
+          addLog('SUPABASE_CONNECTION', 'error', `Supabase 連接異常: ${error}`, {
+            error: {
+              message: error instanceof Error ? error.message : String(error),
+              type: typeof error
+            }
+          })
+        }
+        setIsDebugging(false)
         return
       }
 

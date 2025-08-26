@@ -139,8 +139,8 @@ BEGIN
                 currency = COALESCE(currency, 'USD'),
                 timezone = COALESCE(timezone, 'Asia/Taipei'),
                 updated_at = NOW(),
-                approved_at = COALESCE(approved_at, NOW()),
-                approved_by = COALESCE(approved_by, user_uuid)  -- 使用自己的 UUID 或保持原值
+                approved_at = COALESCE(user_profiles.approved_at, NOW()),
+                approved_by = COALESCE(user_profiles.approved_by, user_uuid)  -- 使用自己的 UUID 或保持原值
             WHERE id = user_uuid;
             
             RAISE NOTICE '✅ 已強制更新管理員權限和資料';
