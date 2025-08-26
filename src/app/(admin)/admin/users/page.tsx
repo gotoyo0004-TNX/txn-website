@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useMemo } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { supabase } from '@/lib/supabase'
+import { useNotification } from '@/contexts/NotificationContext'
 import {
   UserRole,
   UserStatus, 
@@ -21,10 +22,9 @@ import {
   CardContent, 
   Button, 
   Input,
-  useNotification,
-  useConfirmation,
   Badge
 } from '@/components/ui'
+import { useConfirmation } from '@/components/ui/ConfirmationProvider'
 import { 
   UserGroupIcon,
   MagnifyingGlassIcon,
@@ -61,7 +61,7 @@ interface UserListFilters {
 
 const UsersManagementPage: React.FC = () => {
   const { user } = useAuth()
-  const { addNotification } = useNotification()
+  const { showSuccess, showError, showWarning, showInfo } = useNotification()
   const { confirm } = useConfirmation()
 
   // 狀態管理
@@ -136,21 +136,13 @@ const UsersManagementPage: React.FC = () => {
 
       if (error) {
         console.error('載入用戶列表錯誤:', error)
-        addNotification({
-          type: 'error',
-          title: '載入失敗',
-          message: '無法載入用戶列表'
-        })
+        showError('載入失敗', '無法載入用戶列表')
       } else {
         setUsers(data as UserProfile[] || [])
       }
     } catch (error) {
       console.error('載入用戶列表錯誤:', error)
-      addNotification({
-        type: 'error',
-        title: '系統錯誤',
-        message: '載入用戶列表時發生錯誤'
-      })
+      showError('系統錯誤', '載入用戶列表時發生錯誤')
     } finally {
       setLoading(false)
     }
@@ -161,11 +153,7 @@ const UsersManagementPage: React.FC = () => {
     setRefreshing(true)
     await loadUsers()
     setRefreshing(false)
-    addNotification({
-      type: 'info',
-      title: '數據已更新',
-      message: '用戶列表已重新加載'
-    })
+    showInfo('數據已更新', '用戶列表已重新加載')
   }
 
   // 篩選後的用戶列表
@@ -194,16 +182,15 @@ const UsersManagementPage: React.FC = () => {
   // 更新用戶角色
   const updateUserRole = async (userId: string, newRole: UserRole) => {
     if (!currentUserRole || !canManageRole(currentUserRole, newRole)) {
-      addNotification({
-        type: 'error',
-        title: '權限不足',
-        message: '您沒有權限分配此角色'
-      })
+      showError('權限不足', '您沒有權限分配此角色')
       return
     }
 
     setUpdatingUserId(userId)
     try {
+      const targetUser = users.find(u => u.id === userId)
+      const oldRole = targetUser?.role
+      
       const { error } = await supabase
         .from('user_profiles')
         .update({ 
@@ -214,18 +201,11 @@ const UsersManagementPage: React.FC = () => {
 
       if (error) {
         console.error('更新用戶角色錯誤:', error)
-        addNotification({
-          type: 'error',
-          title: '更新失敗',
-          message: '更新用戶角色失敗：' + error.message
-        })
+        showError('更新失敗', '更新用戶角色失敗：' + error.message)
       } else {
-        addNotification({
-          type: 'success',
-          title: '更新成功',
-          message: `用戶角色已更新為 ${ROLE_DISPLAY_NAMES[newRole]}`
-        })
+        showSuccess('更新成功', `用戶角色已更新為 ${ROLE_DISPLAY_NAMES[newRole]}`)
         
+
         // 記錄管理員操作
         await supabase.from('admin_logs').insert({
           admin_id: user?.id,
@@ -233,6 +213,7 @@ const UsersManagementPage: React.FC = () => {
           target_user_id: userId,
           details: {
             action: 'Role updated',
+            old_role: oldRole,
             new_role: newRole,
             updated_by_role: currentUserRole
           }
@@ -242,11 +223,7 @@ const UsersManagementPage: React.FC = () => {
       }
     } catch (error) {
       console.error('更新用戶角色錯誤:', error)
-      addNotification({
-        type: 'error',
-        title: '系統錯誤',
-        message: '更新用戶角色時發生錯誤'
-      })
+      showError('系統錯誤', '更新用戶角色時發生錯誤')
     } finally {
       setUpdatingUserId(null)
       setEditingUserId(null)
@@ -255,16 +232,18 @@ const UsersManagementPage: React.FC = () => {
 
   // 更新用戶狀態
   const updateUserStatus = async (userId: string, newStatus: UserStatus) => {
-    const user = users.find(u => u.id === userId)
-    if (!user) return
+    const targetUser = users.find(u => u.id === userId)
+    if (!targetUser) return
 
     confirm({
       title: '確認狀態變更',
-      message: `您確定要將用戶 ${user.full_name || user.email} 的狀態變更為 ${STATUS_DISPLAY_NAMES[newStatus]} 嗎？`,
+      message: `您確定要將用戶 ${targetUser.full_name || targetUser.email} 的狀態變更為 ${STATUS_DISPLAY_NAMES[newStatus]} 嗎？`,
       confirmText: '確認變更',
       cancelText: '取消',
       type: newStatus === 'inactive' ? 'danger' : 'warning',
       onConfirm: async () => {
+        const oldStatus = targetUser.status
+        
         setUpdatingUserId(userId)
         try {
           const { error } = await supabase
@@ -277,22 +256,14 @@ const UsersManagementPage: React.FC = () => {
 
           if (error) {
             console.error('更新用戶狀態錯誤:', error)
-            addNotification({
-              type: 'error',
-              title: '更新失敗',
-              message: '更新用戶狀態失敗：' + error.message
-            })
+            showError('更新失敗', '更新用戶狀態失敗：' + error.message)
           } else {
-            addNotification({
-              type: 'success',
-              title: '更新成功',
-              message: `用戶狀態已更新為 ${STATUS_DISPLAY_NAMES[newStatus]}`
-            })
+            showSuccess('更新成功', `用戶狀態已更新為 ${STATUS_DISPLAY_NAMES[newStatus]}`)
 
             // 記錄狀態變更歷史
             await supabase.from('user_status_history').insert({
               user_id: userId,
-              old_status: user.status,
+              old_status: oldStatus,
               new_status: newStatus,
               changed_by: user?.id,
               reason: `狀態由管理員變更為 ${STATUS_DISPLAY_NAMES[newStatus]}`
@@ -302,11 +273,7 @@ const UsersManagementPage: React.FC = () => {
           }
         } catch (error) {
           console.error('更新用戶狀態錯誤:', error)
-          addNotification({
-            type: 'error',
-            title: '系統錯誤',
-            message: '更新用戶狀態時發生錯誤'
-          })
+          showError('系統錯誤', '更新用戶狀態時發生錯誤')
         } finally {
           setUpdatingUserId(null)
         }

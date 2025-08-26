@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter, Roboto_Mono } from "next/font/google";
 import { AuthProvider } from '@/contexts/AuthContext';
+import { NotificationIntegration } from '@/components/providers';
 import "./globals.css";
 
 const inter = Inter({
@@ -29,7 +30,9 @@ export default function RootLayout({
         className={`${inter.variable} ${robotoMono.variable} antialiased`}
       >
         <AuthProvider>
-          {children}
+          <NotificationIntegration position="top-right">
+            {children}
+          </NotificationIntegration>
         </AuthProvider>
       </body>
     </html>

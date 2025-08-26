@@ -380,6 +380,26 @@
     }
   }
 
+  /* =============================================
+     Toast 通知動畫樣式
+     ============================================= */
+  
+  .toast-slide-in-right {
+    animation: toastSlideInRight 0.3s ease-out;
+  }
+  
+  .toast-slide-in-left {
+    animation: toastSlideInLeft 0.3s ease-out;
+  }
+  
+  .toast-slide-out-right {
+    animation: toastSlideOutRight 0.3s ease-in;
+  }
+  
+  .toast-slide-out-left {
+    animation: toastSlideOutLeft 0.3s ease-in;
+  }
+
   .data-table td {
     color: #1F2937;
     padding: 1rem 1.5rem;
@@ -641,5 +661,53 @@
   .card-primary {
     border: 1px solid black;
     box-shadow: none;
+  }
+}
+
+/* =============================================
+   Toast 通知動畫關鍵幀定義
+   ============================================= */
+
+@keyframes toastSlideInRight {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes toastSlideInLeft {
+  from {
+    transform: translateX(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes toastSlideOutRight {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+}
+
+@keyframes toastSlideOutLeft {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(-100%);
+    opacity: 0;
   }
 }
