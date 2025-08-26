@@ -1,85 +1,102 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { supabase } from '@/lib/supabase'
+import { UserRole, UserStatus, canAccessAdminPanel } from '@/lib/constants'
 
 interface UserProfile {
   id: string
   email: string
   full_name: string
-  role: 'admin' | 'user'
-  status: 'active' | 'inactive' | 'pending'
+  role: UserRole
+  status: UserStatus
   trading_experience: string
   initial_capital: number
+  currency: string
+  timezone: string
   created_at: string
+  updated_at?: string
+  approved_at?: string
+  approved_by?: string
 }
 
-interface UseUserStatusReturn {
-  userProfile: UserProfile | null
+interface UserStatusReturn {
+  profile: UserProfile | null
+  role: UserRole | null
+  status: UserStatus | null
   loading: boolean
-  error: string | null
   isAdmin: boolean
-  isActive: boolean
+  canAccessAdmin: boolean
   isPending: boolean
   refreshProfile: () => Promise<void>
 }
 
-export const useUserStatus = (): UseUserStatusReturn => {
+export const useUserStatus = (): UserStatusReturn => {
   const { user } = useAuth()
-  const [userProfile, setUserProfile] = useState<UserProfile | null>(null)
+  const [profile, setProfile] = useState<UserProfile | null>(null)
+  const [role, setRole] = useState<UserRole | null>(null)
+  const [status, setStatus] = useState<UserStatus | null>(null)
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
 
-  const fetchUserProfile = async () => {
+  const fetchUserProfile = useCallback(async () => {
     if (!user) {
-      setUserProfile(null)
       setLoading(false)
+      setProfile(null)
+      setRole(null)
+      setStatus(null)
       return
     }
 
     try {
       setLoading(true)
-      setError(null)
-
-      const { data, error: fetchError } = await supabase
+      const { data, error } = await supabase
         .from('user_profiles')
         .select('*')
         .eq('id', user.id)
         .single()
 
-      if (fetchError) {
-        console.error('Error fetching user profile:', fetchError)
-        setError('無法載入用戶資料')
-        setUserProfile(null)
-      } else {
-        setUserProfile(data)
+      if (error) {
+        console.error('獲取用戶資料錯誤:', error)
+        setProfile(null)
+        setRole(null)
+        setStatus(null)
+        return
       }
-    } catch (err) {
-      console.error('Error in fetchUserProfile:', err)
-      setError('載入用戶資料時發生錯誤')
-      setUserProfile(null)
+
+      setProfile(data)
+      setRole(data.role)
+      setStatus(data.status)
+    } catch (error) {
+      console.error('獲取用戶資料錯誤:', error)
+      setProfile(null)
+      setRole(null)
+      setStatus(null)
     } finally {
       setLoading(false)
     }
-  }
+  }, [user])
 
   useEffect(() => {
     fetchUserProfile()
-  }, [user])
+  }, [fetchUserProfile])
 
-  // 計算狀態
-  const isAdmin = userProfile?.role === 'admin' && userProfile?.status === 'active'
-  const isActive = userProfile?.status === 'active'
-  const isPending = userProfile?.status === 'pending'
+  // 計算權限狀態
+  const computedValues = {
+    isPending: profile?.status === 'pending',
+    // 注意：根據管理員權限驗證規範，所有非'user'角色的用戶都可以訪問管理面板
+    isAdmin: role !== null && role !== 'user',
+    canAccessAdmin: role !== null && canAccessAdminPanel(role) && status === 'active'
+  }
 
   return {
-    userProfile,
+    profile,
+    role,
+    status,
     loading,
-    error,
-    isAdmin,
-    isActive,
-    isPending,
+    isAdmin: computedValues.isAdmin,
+    canAccessAdmin: computedValues.canAccessAdmin,
+    isPending: computedValues.isPending,
     refreshProfile: fetchUserProfile
   }
 }
@@ -99,7 +116,7 @@ export const UserStatusGuard: React.FC<UserStatusGuardProps> = ({
   fallback = null
 }) => {
   const { user } = useAuth()
-  const { userProfile, loading, isAdmin, isActive, isPending } = useUserStatus()
+  const { profile, loading, isAdmin, canAccessAdmin, isPending } = useUserStatus()
 
   if (loading) {
     return (
@@ -117,7 +134,7 @@ export const UserStatusGuard: React.FC<UserStatusGuardProps> = ({
     )
   }
 
-  if (!userProfile) {
+  if (!profile) {
     return fallback || (
       <div className="text-center p-8">
         <p className="text-gray-600">無法載入用戶資料</p>
@@ -126,7 +143,7 @@ export const UserStatusGuard: React.FC<UserStatusGuardProps> = ({
   }
 
   // 檢查管理員權限
-  if (requireAdmin && !isAdmin) {
+  if (requireAdmin && !canAccessAdmin) {
     return fallback || (
       <div className="text-center p-8">
         <p className="text-red-600">您沒有權限訪問此內容</p>
@@ -135,7 +152,7 @@ export const UserStatusGuard: React.FC<UserStatusGuardProps> = ({
   }
 
   // 檢查用戶狀態
-  if (!allowedStatuses.includes(userProfile.status)) {
+  if (!allowedStatuses.includes(profile.status)) {
     if (isPending) {
       return fallback || (
         <div className="text-center p-8">
@@ -150,7 +167,7 @@ export const UserStatusGuard: React.FC<UserStatusGuardProps> = ({
       )
     }
 
-    if (userProfile.status === 'inactive') {
+    if (profile.status === 'inactive') {
       return fallback || (
         <div className="text-center p-8">
           <div className="bg-red-50 border border-red-200 rounded-lg p-6 max-w-md mx-auto">

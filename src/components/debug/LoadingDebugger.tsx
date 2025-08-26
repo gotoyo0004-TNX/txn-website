@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { supabase } from '@/lib/supabase'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui'
@@ -9,7 +9,7 @@ interface LoadingDebugInfo {
   step: string
   status: 'loading' | 'success' | 'error'
   message: string
-  data?: any
+  data?: Record<string, unknown>
   timestamp: string
 }
 
@@ -18,7 +18,7 @@ export const LoadingDebugger: React.FC = () => {
   const [debugLogs, setDebugLogs] = useState<LoadingDebugInfo[]>([])
   const [isDebugging, setIsDebugging] = useState(false)
 
-  const addLog = (step: string, status: 'loading' | 'success' | 'error', message: string, data?: any) => {
+  const addLog = (step: string, status: 'loading' | 'success' | 'error', message: string, data?: Record<string, unknown>) => {
     const log: LoadingDebugInfo = {
       step,
       status,
@@ -29,7 +29,7 @@ export const LoadingDebugger: React.FC = () => {
     setDebugLogs(prev => [...prev, log])
   }
 
-  const runFullDiagnostic = async () => {
+  const runFullDiagnostic = useCallback(async () => {
     setIsDebugging(true)
     setDebugLogs([])
 
@@ -62,6 +62,8 @@ export const LoadingDebugger: React.FC = () => {
           .from('user_profiles')
           .select('count')
           .limit(1)
+        
+        // 不需要使用 connectionTest 變數，只檢查是否有錯誤
 
         if (connError) {
           addLog('SUPABASE_CONNECTION', 'error', `Supabase 連接失敗: ${connError.message}`, connError)
@@ -166,18 +168,18 @@ export const LoadingDebugger: React.FC = () => {
       }
 
     } catch (error) {
-      addLog('GENERAL_ERROR', 'error', `診斷過程發生錯誤: ${error}`, error)
+      addLog('GENERAL_ERROR', 'error', `診斷過程發生錯誤: ${error}`, error as any)
     } finally {
       setIsDebugging(false)
     }
-  }
+  }, [authLoading, user]);
 
   useEffect(() => {
     // 自動開始診斷
     if (user && !isDebugging && debugLogs.length === 0) {
       runFullDiagnostic()
     }
-  }, [user])
+  }, [user, isDebugging, debugLogs.length, runFullDiagnostic])
 
   const getStatusIcon = (status: LoadingDebugInfo['status']) => {
     switch (status) {

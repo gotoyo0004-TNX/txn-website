@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { supabase } from '@/lib/supabase'
 import { 
@@ -17,9 +17,7 @@ import {
   CheckCircleIcon, 
   XCircleIcon, 
   ClockIcon,
-  DocumentTextIcon,
-  ArrowPathIcon,
-  EyeIcon
+  ArrowPathIcon
 } from '@heroicons/react/24/outline'
 
 interface PendingUser {
@@ -61,25 +59,14 @@ const AdminDashboard: React.FC = () => {
   const [pendingUsers, setPendingUsers] = useState<PendingUser[]>([])
   const [userStats, setUserStats] = useState<UserStats>({ total: 0, active: 0, pending: 0, inactive: 0 })
   const [actionLoading, setActionLoading] = useState<string | null>(null)
-  const [adminLogs, setAdminLogs] = useState<AdminLog[]>([])
-  const [showLogs, setShowLogs] = useState(false)
   const [refreshing, setRefreshing] = useState(false)
-  const [error, setError] = useState<string | null>(null)
   
   // 批量操作相關狀態
   const [selectedUsers, setSelectedUsers] = useState<Set<string>>(new Set())
   const [batchLoading, setBatchLoading] = useState(false)
   const [selectAll, setSelectAll] = useState(false)
 
-  // 載入初始數據
-  useEffect(() => {
-    if (user) {
-      loadPendingUsers()
-      loadUserStats()
-    }
-  }, [user])
-
-  const loadPendingUsers = async () => {
+  const loadPendingUsers = useCallback(async () => {
     try {
       const { data, error } = await supabase
         .from('user_profiles')
@@ -107,7 +94,15 @@ const AdminDashboard: React.FC = () => {
     } finally {
       setLoading(false)
     }
-  }
+  }, [addNotification])
+
+  // 載入初始數據
+  useEffect(() => {
+    if (user) {
+      loadPendingUsers()
+      loadUserStats()
+    }
+  }, [user, loadPendingUsers])
 
   const loadUserStats = async () => {
     try {

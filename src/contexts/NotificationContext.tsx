@@ -3,8 +3,6 @@
 import React, { createContext, useContext, useReducer, useEffect, useCallback } from 'react'
 import { 
   ToastNotification, 
-  NotificationType, 
-  NotificationPriority,
   generateNotificationId,
   NOTIFICATION_CONFIG,
   sortNotificationsByPriority

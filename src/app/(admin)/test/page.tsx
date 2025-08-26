@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { supabase } from '@/lib/supabase'
 import { Card, CardHeader, CardTitle, CardContent, Button } from '@/components/ui'
@@ -9,7 +9,7 @@ interface TestResult {
   test: string
   status: 'pass' | 'fail' | 'pending'
   message: string
-  details?: any
+  details?: Record<string, unknown>
 }
 
 export default function AdminTestPage() {
@@ -17,7 +17,7 @@ export default function AdminTestPage() {
   const [testResults, setTestResults] = useState<TestResult[]>([])
   const [isRunning, setIsRunning] = useState(false)
 
-  const addResult = (test: string, status: 'pass' | 'fail' | 'pending', message: string, details?: any) => {
+  const addResult = (test: string, status: 'pass' | 'fail' | 'pending', message: string, details?: Record<string, unknown>) => {
     setTestResults(prev => {
       const existing = prev.find(r => r.test === test)
       const newResult = { test, status, message, details }
@@ -30,7 +30,7 @@ export default function AdminTestPage() {
     })
   }
 
-  const runTests = async () => {
+  const runTests = useCallback(async () => {
     setIsRunning(true)
     setTestResults([])
 
@@ -52,6 +52,8 @@ export default function AdminTestPage() {
         .from('user_profiles')
         .select('count')
         .limit(1)
+
+      // 檢查是否有錯誤，不需要使用 dbTest 變數
 
       if (dbError) {
         addResult('DATABASE', 'fail', `資料庫連接失敗: ${dbError.message}`, dbError)
@@ -134,17 +136,17 @@ export default function AdminTestPage() {
       })
 
     } catch (error) {
-      addResult('ERROR', 'fail', `測試過程發生錯誤: ${error}`, error)
+      addResult('ERROR', 'fail', `測試過程發生錯誤: ${error}`, error as any)
     } finally {
       setIsRunning(false)
     }
-  }
+  }, [user]);
 
   useEffect(() => {
     if (user) {
       runTests()
     }
-  }, [user])
+  }, [user, runTests])
 
   const getStatusColor = (status: TestResult['status']) => {
     switch (status) {
@@ -241,8 +243,8 @@ export default function AdminTestPage() {
             <h3 className="font-semibold text-yellow-800 mb-2">常見問題：</h3>
             <ul className="list-disc list-inside space-y-1 text-yellow-700">
               <li><strong>用戶資料不存在：</strong> 需要先在前端註冊 admin@txn.test，然後執行修復腳本</li>
-              <li><strong>權限不足：</strong> 確認 role 欄位為 'admin'、'super_admin' 或 'moderator'</li>
-              <li><strong>帳號狀態異常：</strong> 確認 status 欄位為 'active'</li>
+              <li><strong>權限不足：</strong> 確認 role 欄位為 &apos;admin&apos;、&apos;super_admin&apos; 或 &apos;moderator&apos;</li>
+              <li><strong>帳號狀態異常：</strong> 確認 status 欄位為 &apos;active&apos;</li>
               <li><strong>RLS 策略問題：</strong> 檢查 Supabase 專案的 Row Level Security 設置</li>
             </ul>
           </div>

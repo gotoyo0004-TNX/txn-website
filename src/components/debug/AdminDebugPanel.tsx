@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { supabase } from '@/lib/supabase'
 import { 
@@ -12,8 +12,8 @@ import {
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui'
 
 interface DebugInfo {
-  authUser: any
-  profileData: any
+  authUser: Record<string, unknown>
+  profileData: Record<string, unknown> | null
   hasAdminAccess: boolean
   errors: string[]
 }
@@ -23,7 +23,7 @@ export const AdminDebugPanel: React.FC = () => {
   const [debugInfo, setDebugInfo] = useState<DebugInfo | null>(null)
   const [loading, setLoading] = useState(false)
 
-  const runDiagnostic = async () => {
+  const runDiagnostic = useCallback(async () => {
     if (!user) return
 
     setLoading(true)
@@ -74,13 +74,13 @@ export const AdminDebugPanel: React.FC = () => {
     } finally {
       setLoading(false)
     }
-  }
+  }, [user]);
 
   useEffect(() => {
     if (user) {
       runDiagnostic()
     }
-  }, [user])
+  }, [user, runDiagnostic])
 
   if (!user) {
     return (

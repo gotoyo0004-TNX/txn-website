@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect, useMemo } from 'react'
+import React, { useState, useEffect, useMemo, useCallback } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { supabase } from '@/lib/supabase'
 import { useNotification } from '@/contexts/NotificationContext'
@@ -107,42 +107,7 @@ const UsersManagementPage: React.FC = () => {
     if (currentUserRole) {
       loadUsers()
     }
-  }, [currentUserRole])
-
-  const loadUsers = async () => {
-    try {
-      setLoading(true)
-      const { data, error } = await supabase
-        .from('user_profiles')
-        .select(`
-          id,
-          email,
-          full_name,
-          role,
-          status,
-          trading_experience,
-          initial_capital,
-          currency,
-          timezone,
-          created_at,
-          approved_at,
-          approved_by
-        `)
-        .order('created_at', { ascending: false })
-
-      if (error) {
-        console.error('載入用戶列表錯誤:', error)
-        showError('載入失敗', '無法載入用戶列表')
-      } else {
-        setUsers(data as UserProfile[] || [])
-      }
-    } catch (error) {
-      console.error('載入用戶列表錯誤:', error)
-      showError('系統錯誤', '載入用戶列表時發生錯誤')
-    } finally {
-      setLoading(false)
-    }
-  }
+  }, [currentUserRole, loadUsers])
 
   // 刷新數據
   const refreshData = async () => {
