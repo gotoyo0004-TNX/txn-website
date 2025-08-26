@@ -40,6 +40,7 @@ const AdminDashboardPage: React.FC = () => {
   const { showSuccess, showError } = useNotification()
   const [userRole, setUserRole] = useState<UserRole | null>(null)
   const [loading, setLoading] = useState(true)
+  const [statsLoading, setStatsLoading] = useState(false)
   const [stats, setStats] = useState<DashboardStats>({
     totalUsers: 0,
     pendingUsers: 0,
@@ -111,12 +112,14 @@ const AdminDashboardPage: React.FC = () => {
 
   const loadStats = async () => {
     try {
+      setStatsLoading(true)
       const { data, error } = await supabase
         .from('user_profiles')
         .select('role, status')
 
       if (error) {
         console.error('載入統計數據錯誤:', error)
+        showError('載入失敗', '無法載入系統統計數據：' + error.message)
         return
       }
 
@@ -144,13 +147,50 @@ const AdminDashboardPage: React.FC = () => {
       setStats(statistics)
     } catch (error) {
       console.error('載入統計數據錯誤:', error)
+      showError('系統錯誤', '載入統計數據時發生錯誤')
+    } finally {
+      setStatsLoading(false)
     }
   }
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <Loading size="xl" />
+      <div className="max-w-7xl mx-auto space-y-6">
+        {/* 載入狀態的頁面標題 */}
+        <div className="animate-pulse">
+          <div className="h-8 bg-gray-200 rounded w-48 mb-2"></div>
+          <div className="h-4 bg-gray-100 rounded w-64"></div>
+        </div>
+
+        {/* 載入狀態的統計卡片 */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {[1, 2, 3, 4].map((i) => (
+            <Card key={i} variant="elevated">
+              <CardContent className="p-6">
+                <div className="flex items-center animate-pulse">
+                  <div className="flex-shrink-0">
+                    <div className="h-8 w-8 bg-gray-200 rounded"></div>
+                  </div>
+                  <div className="ml-4 flex-1">
+                    <div className="h-4 bg-gray-200 rounded w-20 mb-2"></div>
+                    <div className="h-6 bg-gray-100 rounded w-12"></div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+
+        {/* 載入中的主要指示器 */}
+        <Card variant="elevated">
+          <CardContent className="text-center py-12">
+            <Loading size="xl" />
+            <p className="mt-4 text-lg font-medium">載入管理員控制面板...</p>
+            <p className="text-sm text-gray-600 mt-2">
+              正在獲取系統統計和用戶數據
+            </p>
+          </CardContent>
+        </Card>
       </div>
     )
   }

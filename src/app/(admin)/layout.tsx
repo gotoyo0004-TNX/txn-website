@@ -22,7 +22,8 @@ import {
   ChartBarIcon,
   CogIcon,
   HomeIcon,
-  ArrowLeftOnRectangleIcon
+  ArrowLeftOnRectangleIcon,
+  ClockIcon
 } from '@heroicons/react/24/outline'
 
 interface AdminLayoutProps {
@@ -37,6 +38,8 @@ const AdminLayoutContent: React.FC<AdminLayoutProps> = ({ children }) => {
   const [userRole, setUserRole] = useState<UserRole | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [loadingTimeout, setLoadingTimeout] = useState(false)
+  const [showDebugPanel, setShowDebugPanel] = useState(false)
 
   // 管理員導航項目
   const adminNavItems = [
@@ -65,6 +68,26 @@ const AdminLayoutContent: React.FC<AdminLayoutProps> = ({ children }) => {
       description: '系統配置和偏好設定'
     }
   ]
+
+  // 設置載入超時檢測
+  useEffect(() => {
+    let timeoutId: NodeJS.Timeout
+    
+    if (loading || authLoading) {
+      // 5 秒後顯示超時提示
+      timeoutId = setTimeout(() => {
+        setLoadingTimeout(true)
+      }, 5000)
+    } else {
+      setLoadingTimeout(false)
+    }
+    
+    return () => {
+      if (timeoutId) {
+        clearTimeout(timeoutId)
+      }
+    }
+  }, [loading, authLoading])
 
   // 檢查管理員權限
   useEffect(() => {
@@ -142,7 +165,7 @@ const AdminLayoutContent: React.FC<AdminLayoutProps> = ({ children }) => {
     router.push('/')
   }
 
-  // 載入中狀態 - 顯示詳細調試信息
+  // 載入中狀態 - 顯示詳細調試信息和超時處理
   if (loading || authLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-txn-primary-50 to-txn-accent-50 dark:from-txn-primary-900 dark:to-txn-primary-800">
@@ -154,13 +177,74 @@ const AdminLayoutContent: React.FC<AdminLayoutProps> = ({ children }) => {
                 <Loading size="xl" />
                 <p className="mt-4 text-lg font-medium">載入管理面板中...</p>
                 <p className="text-sm text-gray-600 mt-2">
-                  如果載入時間過長，請查看下方診斷信息
+                  正在驗證管理員權限和載入相關資料
                 </p>
+                
+                {/* 載入步驟指示 */}
+                <div className="mt-6 max-w-md mx-auto">
+                  <div className="space-y-2 text-left">
+                    <div className="flex items-center gap-2 text-sm">
+                      <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+                      <span className={authLoading ? 'text-blue-600' : 'text-green-600'}>
+                        {authLoading ? '驗證用戶身份...' : '✓ 用戶身份已驗證'}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm">
+                      <div className={`w-2 h-2 rounded-full ${loading ? 'bg-blue-500 animate-pulse' : 'bg-green-500'}`}></div>
+                      <span className={loading ? 'text-blue-600' : 'text-green-600'}>
+                        {loading ? '檢查管理員權限...' : '✓ 權限檢查完成'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                
+                {/* 超時提示 */}
+                {loadingTimeout && (
+                  <div className="mt-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                    <div className="flex items-center gap-2 text-yellow-800 mb-2">
+                      <ClockIcon className="h-5 w-5" />
+                      <span className="font-medium">載入時間較長</span>
+                    </div>
+                    <p className="text-sm text-yellow-700 mb-3">
+                      系統正在載入中，這可能需要一些時間。如果持續無法載入，請嘗試以下操作：
+                    </p>
+                    <div className="space-y-2 text-sm text-yellow-700">
+                      <div className="flex items-center gap-2">
+                        <span>•</span>
+                        <span>重新整理頁面 (F5)</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span>•</span>
+                        <span>清除瀏覽器快取</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span>•</span>
+                        <span>檢查網路連線</span>
+                      </div>
+                    </div>
+                    <div className="mt-4 flex gap-2 justify-center">
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => window.location.reload()}
+                      >
+                        重新整理
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => setShowDebugPanel(!showDebugPanel)}
+                      >
+                        {showDebugPanel ? '隱藏' : '顯示'}診斷信息
+                      </Button>
+                    </div>
+                  </div>
+                )}
               </CardContent>
             </Card>
             
-            {/* 載入問題調試工具 - 只在開發模式或載入超過 3 秒後顯示 */}
-            {process.env.NODE_ENV === 'development' && (
+            {/* 載入問題調試工具 */}
+            {(showDebugPanel || process.env.NODE_ENV === 'development') && (
               <LoadingDebugger />
             )}
           </div>
