@@ -25,23 +25,50 @@ export default function SupabaseTest() {
     },
     error: null
   })
+  const [testStartTime, setTestStartTime] = useState<number>(Date.now())
+  const [timeoutWarning, setTimeoutWarning] = useState<boolean>(false)
 
   useEffect(() => {
     async function testConnection() {
+      const startTime = Date.now()
+      setTestStartTime(startTime)
+      setTimeoutWarning(false)
+      
+      // 設置超時警告（5秒後顯示）
+      const warningTimer = setTimeout(() => {
+        setTimeoutWarning(true)
+      }, 5000)
+      
+      // 設置最大超時（15秒）
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => {
+          reject(new Error('連接超時：請檢查網路連線或 Supabase 服務狀態'))
+        }, 15000)
+      })
+      
       try {
-        // 直接檢查資料表存在性 - 這樣也能測試連接
-        const tableChecks = await Promise.allSettled([
+        // 創建帶超時的查詢Promise
+        const tableCheckPromise = Promise.allSettled([
           supabase.from('user_profiles').select('id').limit(1),
           supabase.from('strategies').select('id').limit(1),
           supabase.from('trades').select('id').limit(1),
           supabase.from('performance_snapshots').select('id').limit(1)
         ])
+        
+        // 使用 Promise.race 來實現超時控制
+        const tableChecks = await Promise.race([
+          tableCheckPromise,
+          timeoutPromise
+        ]) as PromiseSettledResult<any>[]
+        
+        // 清除計時器
+        clearTimeout(warningTimer)
 
         // 檢查是否有任何成功的連接
         const hasAnyConnection = tableChecks.some(result => 
           result.status === 'fulfilled' && 
           (result.value.error === null || 
-           (result.value.error && !result.value.error.message.includes('JWT')))
+           (result.value.error && !result.value.error.message.includes('JWT') && !result.value.error.message.includes('permission')))
         )
 
         if (!hasAnyConnection) {
@@ -50,10 +77,24 @@ export default function SupabaseTest() {
             ? tableChecks[0].value.error?.message 
             : tableChecks[0].reason?.message
           
+          let friendlyError = '無法連接到 Supabase'
+          
+          if (firstError) {
+            if (firstError.includes('Failed to fetch') || firstError.includes('NetworkError')) {
+              friendlyError = '網路連線問題：請檢查網路連線或防火牆設定'
+            } else if (firstError.includes('Invalid API')) {
+              friendlyError = 'Supabase API 金鑰無效：請檢查環境變數設定'
+            } else if (firstError.includes('Project not found')) {
+              friendlyError = 'Supabase 專案不存在：請檢查 Project URL'
+            } else if (firstError.includes('timeout') || firstError.includes('超時')) {
+              friendlyError = '連接超時：請稍後再試或檢查 Supabase 服務狀態'
+            }
+          }
+          
           setStatus(prev => ({
             ...prev,
             connection: 'failed',
-            error: firstError || '無法連接到 Supabase'
+            error: friendlyError + (firstError ? ` (${firstError})` : '')
           }))
           return
         }
@@ -81,17 +122,51 @@ export default function SupabaseTest() {
         })
         
       } catch (err) {
+        clearTimeout(warningTimer)
         console.error('Supabase 連接測試錯誤:', err)
+        
+        let errorMessage = '未知錯誤'
+        if (err instanceof Error) {
+          if (err.message.includes('超時')) {
+            errorMessage = err.message
+          } else if (err.message.includes('Failed to fetch')) {
+            errorMessage = '網路連線失敗：請檢查網路連線'
+          } else {
+            errorMessage = err.message
+          }
+        }
+        
         setStatus(prev => ({
           ...prev,
           connection: 'failed',
-          error: err instanceof Error ? err.message : '未知錯誤'
+          error: errorMessage
         }))
       }
     }
 
     testConnection()
   }, [])
+  
+  // 重試連接函數
+  const retryConnection = () => {
+    setStatus({
+      connection: 'testing',
+      tables: {
+        user_profiles: false,
+        strategies: false,
+        trades: false,
+        performance_snapshots: false
+      },
+      error: null
+    })
+    setTestStartTime(Date.now())
+    setTimeoutWarning(false)
+    
+    // 重新執行測試
+    setTimeout(() => {
+      window.location.reload()
+    }, 100)
+  }
 
   const getStatusColor = () => {
     switch (status.connection) {
@@ -118,6 +193,9 @@ export default function SupabaseTest() {
   const getStatusText = () => {
     switch (status.connection) {
       case 'testing':
+        if (timeoutWarning) {
+          return '連接時間較長，請稍候...'
+        }
         return '測試連接中...'
       case 'connected':
         return 'Supabase 連接成功！'
@@ -143,12 +221,35 @@ export default function SupabaseTest() {
             <span className="font-medium">{getStatusText()}</span>
           </div>
           
+          {timeoutWarning && status.connection === 'testing' && (
+            <div className="mt-2 p-3 bg-yellow-50 border border-yellow-200 rounded">
+              <div className="flex items-center gap-2 text-yellow-800">
+                <span>⚠️</span>
+                <span className="font-medium">連接時間較長</span>
+              </div>
+              <p className="text-sm text-yellow-700 mt-1">
+                這可能表示網路連線緩慢或 Supabase 服務繁忙。請檢查：
+              </p>
+              <ul className="text-sm text-yellow-700 mt-1 ml-4 list-disc">
+                <li>網路連線狀態</li>
+                <li>Supabase 專案 URL 是否正確</li>
+                <li>API 金鑰是否有效</li>
+              </ul>
+            </div>
+          )}
+          
           {status.error && (
             <div className="mt-2 text-sm">
               <strong>錯誤詳情：</strong>
               <p className="mt-1 bg-white p-2 rounded border text-gray-700">
                 {status.error}
               </p>
+              <button
+                onClick={retryConnection}
+                className="mt-2 px-3 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700 transition-colors"
+              >
+                🔄 重試連接
+              </button>
             </div>
           )}
         </div>
