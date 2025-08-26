@@ -41,30 +41,32 @@ WHERE state IN ('active', 'idle in transaction')
   AND query NOT LIKE '%pg_stat_activity%'
 ORDER BY query_start;
 
--- 終止超時的空閒事務（謹慎使用）
+-- 檢查空閒事務（不強制終止，避免權限問題）
 DO $$
 DECLARE
     r RECORD;
-    terminated_count INTEGER := 0;
+    idle_count INTEGER := 0;
 BEGIN
-    -- 終止超過 5 分鐘的空閒事務
+    RAISE NOTICE '🔍 檢查是否有長時間空閒事務...';
+    
+    -- 只顯示空閒事務的資訊，不強制終止（避免權限問題）
     FOR r IN (
         SELECT pid, state, NOW() - state_change as duration
         FROM pg_stat_activity 
         WHERE state = 'idle in transaction'
           AND NOW() - state_change > INTERVAL '5 minutes'
           AND pid != pg_backend_pid()
+        LIMIT 5  -- 只查看前 5 個
     ) LOOP
-        BEGIN
-            PERFORM pg_terminate_backend(r.pid);
-            terminated_count := terminated_count + 1;
-            RAISE NOTICE '🔧 已終止長時間空閒事務 PID: %, 持續時間: %', r.pid, r.duration;
-        EXCEPTION WHEN OTHERS THEN
-            RAISE NOTICE '⚠️ 無法終止 PID: %, 錯誤: %', r.pid, SQLERRM;
-        END;
+        idle_count := idle_count + 1;
+        RAISE NOTICE '📋 發現長時間空閒事務 PID: %, 持續時間: %', r.pid, r.duration;
     END LOOP;
     
-    RAISE NOTICE '🔧 共終止了 % 個長時間空閒事務', terminated_count;
+    IF idle_count = 0 THEN
+        RAISE NOTICE '✅ 沒有發現長時間空閒事務';
+    ELSE
+        RAISE NOTICE '⚠️ 發現 % 個長時間空閒事務，系統會自動處理', idle_count;
+    END IF;
 END $$;
 
 -- =============================================
@@ -224,12 +226,20 @@ BEGIN
 END $$;
 
 -- =============================================
--- 7. 清理資料庫快取
+-- 7. 優化資料庫設定（移除需要超級用戶權限的操作）
 -- =============================================
 
--- 清理計劃快取
-SELECT pg_stat_reset();
-DISCARD ALL;
+-- 注意：pg_stat_reset() 和 DISCARD ALL 需要超級用戶權限，在 Supabase 中無法執行
+-- 改為執行其他優化操作
+
+-- 重新計算統計信息（這個可以執行）
+ANALYZE public.user_profiles;
+
+DO $$
+BEGIN
+    RAISE NOTICE '⚠️ 跳過需要超級用戶權限的快取清理操作';
+    RAISE NOTICE '✅ 已執行可用的資料庫優化操作';
+END $$;
 
 -- =============================================
 -- 8. 連接測試和驗證
