@@ -15,7 +15,7 @@ import {
 import {
   CogIcon,
   ShieldCheckIcon,
-  DatabaseIcon,
+  ServerStackIcon,
   BellIcon,
   UserGroupIcon,
   ChartBarIcon,
@@ -234,7 +234,7 @@ const SettingsPage: React.FC = () => {
       <Card variant="elevated">
         <CardHeader>
           <CardTitle className="flex items-center">
-            <DatabaseIcon className="h-5 w-5 mr-2" />
+            <ServerStackIcon className="h-5 w-5 mr-2" />
             資料庫管理
           </CardTitle>
         </CardHeader>
@@ -242,7 +242,7 @@ const SettingsPage: React.FC = () => {
           <div className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <Button variant="outline" className="flex flex-col items-center p-6 h-auto">
-                <DatabaseIcon className="h-8 w-8 mb-2 text-blue-500" />
+                <ServerStackIcon className="h-8 w-8 mb-2 text-blue-500" />
                 <span className="font-medium">備份資料庫</span>
                 <span className="text-xs text-gray-500 mt-1">建立完整備份</span>
               </Button>
