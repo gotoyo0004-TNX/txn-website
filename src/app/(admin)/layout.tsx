@@ -105,31 +105,12 @@ const AdminLayoutContent: React.FC<AdminLayoutProps> = ({ children }) => {
       try {
         setError(null)
         
-        // 創建超時Promise（10秒）
+        // 創建超時Promise（5秒 - 縮短超時時間）
         const timeoutPromise = new Promise((_, reject) => {
-          setTimeout(() => reject(new Error('管理員權限檢查超時')), 10000)
+          setTimeout(() => reject(new Error('管理員權限檢查超時')), 5000)
         })
         
-        // 首先測試 Supabase 連接
-        const connectionPromise = supabase
-          .from('user_profiles')
-          .select('id')
-          .limit(1)
-          
-        const { error: connectionError } = await Promise.race([
-          connectionPromise,
-          timeoutPromise
-        ]) as { error: any }
-          
-        if (connectionError) {
-          console.error('Supabase 連接錯誤:', connectionError)
-          setError(`資料庫連接失敗: ${connectionError.message}`)
-          setIsAdmin(false)
-          setUserRole(null)
-          return
-        }
-        
-        // 然後檢查用戶權限（也加上超時）
+        // 直接檢查用戶權限，跳過連接測試以減少查詢數量
         const userCheckPromise = supabase
           .from('user_profiles')
           .select('role, status')
