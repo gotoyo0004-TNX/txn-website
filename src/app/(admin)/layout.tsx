@@ -105,18 +105,16 @@ const AdminLayoutContent: React.FC<AdminLayoutProps> = ({ children }) => {
       try {
         setError(null)
         
-        // 使用重試機制進行管理員權限檢查
+        // 使用新的安全函數進行管理員權限檢查
         const result = await queryWithRetry(async () => {
           const timeoutPromise = new Promise((_, reject) => {
-            setTimeout(() => reject(new Error('管理員權限檢查超時')), 8000) // 增加到 8 秒
+            setTimeout(() => reject(new Error('管理員權限檢查超時')), 5000) // 減少到 5 秒
           })
-          
+
+          // 使用我們建立的安全函數
           const userCheckPromise = supabase
-            .from('user_profiles')
-            .select('role, status')
-            .eq('id', user.id)
-            .single()
-            
+            .rpc('get_current_user_info')
+
           return Promise.race([userCheckPromise, timeoutPromise])
         })
         
@@ -124,9 +122,9 @@ const AdminLayoutContent: React.FC<AdminLayoutProps> = ({ children }) => {
 
         if (error) {
           console.error('檢查管理員權限錯誤:', error)
-          
+
           let errorMessage = '無法驗證管理員權限'
-          
+
           if (error.code === 'PGRST116') {
             errorMessage = '用戶資料不存在，請聯絡系統管理員'
           } else if (error.message?.includes('row level security')) {
@@ -136,13 +134,15 @@ const AdminLayoutContent: React.FC<AdminLayoutProps> = ({ children }) => {
           } else if (error.code) {
             errorMessage = `資料庫錯誤 (${error.code}): ${error.message}`
           }
-          
+
           setError(errorMessage)
           setIsAdmin(false)
           setUserRole(null)
         } else {
-          const role = data?.role as string
-          const status = data?.status
+          // 處理新函數返回的資料格式
+          const userData = Array.isArray(data) ? data[0] : data
+          const role = userData?.role as string
+          const status = userData?.status
 
           if (!isValidRole(role)) {
             setError('無效的用戶角色')
@@ -156,7 +156,7 @@ const AdminLayoutContent: React.FC<AdminLayoutProps> = ({ children }) => {
             const hasAdminAccess = canAccessAdminPanel(role)
             setIsAdmin(hasAdminAccess)
             setUserRole(role)
-            
+
             if (!hasAdminAccess) {
               setError('您沒有管理員權限')
             }
