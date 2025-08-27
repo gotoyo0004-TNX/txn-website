@@ -253,24 +253,30 @@ BEGIN
     DROP POLICY IF EXISTS "admin_read_all_simple" ON public.user_profiles;
     DROP POLICY IF EXISTS "admin_update_all_simple" ON public.user_profiles;
     
-    -- 建立或更新安全函數
-    CREATE OR REPLACE FUNCTION public.is_admin_user_safe(user_id UUID)
-    RETURNS BOOLEAN AS $$
-    DECLARE
-        user_role TEXT;
-        user_status TEXT;
-    BEGIN
-        SELECT role, status INTO user_role, user_status
-        FROM public.user_profiles 
-        WHERE id = user_id;
-        
-        IF user_role IS NULL THEN
-            RETURN FALSE;
-        END IF;
-        
-        RETURN (user_role IN ('admin', 'super_admin', 'moderator') AND user_status = 'active');
-    END;
-    $$ LANGUAGE plpgsql SECURITY DEFINER STABLE;
+    RAISE NOTICE '✅ 舊策略清理完成';
+END $$;
+
+-- 建立或更新安全函數
+CREATE OR REPLACE FUNCTION public.is_admin_user_safe(user_id UUID)
+RETURNS BOOLEAN AS $$
+DECLARE
+    user_role TEXT;
+    user_status TEXT;
+BEGIN
+    SELECT role, status INTO user_role, user_status
+    FROM public.user_profiles
+    WHERE id = user_id;
+
+    IF user_role IS NULL THEN
+        RETURN FALSE;
+    END IF;
+
+    RETURN (user_role IN ('admin', 'super_admin', 'moderator') AND user_status = 'active');
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER STABLE;
+
+DO $$
+BEGIN
     
     RAISE NOTICE '✅ 安全函數已更新';
 END $$;
