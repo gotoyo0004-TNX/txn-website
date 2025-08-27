@@ -17,31 +17,21 @@ BEGIN
 END $$;
 
 -- =============================================
--- 1. 清理現有資料 (如果存在)
+-- 1. 檢查前置條件
 -- =============================================
 
--- 停用 RLS 以便清理
-ALTER TABLE IF EXISTS public.user_profiles DISABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS public.strategies DISABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS public.trades DISABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS public.performance_snapshots DISABLE ROW LEVEL SECURITY;
+DO $$
+BEGIN
+    RAISE NOTICE '🔍 檢查系統狀態...';
 
--- 刪除現有策略
-DROP POLICY IF EXISTS "authenticated_read_own" ON public.user_profiles;
-DROP POLICY IF EXISTS "authenticated_update_own" ON public.user_profiles;
-DROP POLICY IF EXISTS "authenticated_insert_own" ON public.user_profiles;
-DROP POLICY IF EXISTS "admin_read_all_simple" ON public.user_profiles;
-DROP POLICY IF EXISTS "admin_update_all_simple" ON public.user_profiles;
-
--- 刪除現有資料表 (謹慎操作)
-DROP TABLE IF EXISTS public.performance_snapshots CASCADE;
-DROP TABLE IF EXISTS public.trades CASCADE;
-DROP TABLE IF EXISTS public.strategies CASCADE;
-DROP TABLE IF EXISTS public.user_profiles CASCADE;
-
--- 刪除現有函數
-DROP FUNCTION IF EXISTS public.is_admin_user_safe(UUID);
-DROP FUNCTION IF EXISTS public.handle_new_user();
+    -- 檢查是否已有資料表存在
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'user_profiles' AND table_schema = 'public') THEN
+        RAISE NOTICE '⚠️  發現現有的 user_profiles 表';
+        RAISE NOTICE '💡 建議：如需清理現有結構，請先執行 safe_cleanup_before_setup.sql';
+    ELSE
+        RAISE NOTICE '✅ 未發現現有資料表，可以安全建立';
+    END IF;
+END $$;
 
 -- =============================================
 -- 2. 建立資料表結構

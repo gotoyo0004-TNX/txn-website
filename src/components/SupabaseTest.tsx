@@ -61,13 +61,24 @@ export default function SupabaseTest() {
             supabase.from('performance_snapshots').select('id').limit(1)
           ])
         } else {
-          // 未登入：使用基本連接測試（不查詢受保護的資料表）
+          // 未登入：使用公開的系統檢查函數
           tableCheckPromise = Promise.allSettled([
-            // 測試基本連接 - 使用 Supabase 內建的系統查詢
-            supabase.rpc('version').then(() => ({ data: [], error: null })),
-            supabase.rpc('version').then(() => ({ data: [], error: null })),
-            supabase.rpc('version').then(() => ({ data: [], error: null })),
-            supabase.rpc('version').then(() => ({ data: [], error: null }))
+            supabase.rpc('check_system_health').then(result => ({
+              data: result.data?.filter((item: any) => item.component === 'user_profiles'),
+              error: result.error
+            })),
+            supabase.rpc('check_system_health').then(result => ({
+              data: result.data?.filter((item: any) => item.component === 'strategies'),
+              error: result.error
+            })),
+            supabase.rpc('check_system_health').then(result => ({
+              data: result.data?.filter((item: any) => item.component === 'trades'),
+              error: result.error
+            })),
+            supabase.rpc('check_system_health').then(result => ({
+              data: result.data?.filter((item: any) => item.component === 'performance_snapshots'),
+              error: result.error
+            }))
           ])
         }
         
@@ -135,13 +146,16 @@ export default function SupabaseTest() {
                !tableChecks[3].value.error.message.includes('does not exist'))
           }
         } else {
-          // 未登入：基於連接測試結果推斷（假設資料表存在）
-          const connectionWorking = tableChecks.some(result => result.status === 'fulfilled')
+          // 未登入：基於系統健康檢查結果
           tableExists = {
-            user_profiles: connectionWorking,
-            strategies: connectionWorking,
-            trades: connectionWorking,
-            performance_snapshots: connectionWorking
+            user_profiles: tableChecks[0].status === 'fulfilled' &&
+              tableChecks[0].value.data?.some((item: any) => item.status === 'exists'),
+            strategies: tableChecks[1].status === 'fulfilled' &&
+              tableChecks[1].value.data?.some((item: any) => item.status === 'exists'),
+            trades: tableChecks[2].status === 'fulfilled' &&
+              tableChecks[2].value.data?.some((item: any) => item.status === 'exists'),
+            performance_snapshots: tableChecks[3].status === 'fulfilled' &&
+              tableChecks[3].value.data?.some((item: any) => item.status === 'exists')
           }
         }
         
